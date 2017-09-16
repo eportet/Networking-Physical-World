@@ -32,7 +32,8 @@ void loop() {
       while(true) {
         if(XBee.available() <= 0) {
           delay(100);
-          continue;
+          continue;ls
+          
         }
         char in = char(XBee.read());
         if (in == '\n')
