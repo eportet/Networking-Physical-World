@@ -24,23 +24,40 @@ void loop() {
     tempS.toCharArray(chars, tempS.length() + 1); 
     XBee.write(chars);
 
-
+    Serial.println(chars);
+    int counter = 0;
     while(id == -1) {
       String message = "";
-      Serial.println("HERE");
+      Serial.println(counter);
       while(true) {
-        if(XBee.available() <= 0)
+        if(XBee.available() <= 0) {
+          delay(100);
           continue;
-        if(XBee.peek() == '\n')
+        }
+        if(XBee.peek() == '\n') {
           break;
+        }
         message += char(XBee.read());
+        Serial.println(message);
       }
       //Serial.println(looking);
-      Serial.println(message);
+      if(message.length() <= 0) {
+        delay(1000);
+        counter += 1;
+        if(counter > 5)
+          return;
+        continue;
+      }
       if(message.substring(0, looking.length()) == looking) {
-        id = 7;
+        String idS = message.substring(looking.length() + 1);
+        id = idS.toInt();
         Serial.println("GOT ID");
         break;
+      }
+      else {
+        counter += 1;
+        if(counter > 5)
+          return;
       }
     }
   }
