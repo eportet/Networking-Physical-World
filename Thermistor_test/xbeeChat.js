@@ -9,7 +9,7 @@ var proposed = [];
 var count = 0;
 var portName = process.argv[2],
 portConfig = {
-	baudRate: 9600,
+	baudRate: 115200,
 	parser: SerialPort.parsers.readline("\n")
 };
 
@@ -19,20 +19,21 @@ sp = new SerialPort.SerialPort(portName, portConfig);
 app.get('/', function(req, res){
   res.sendfile('index.html');
 });
-
+var recv = 0;
 sp.on("open", function () {
   console.log("Listening on Serial");
   sp.on('data', function(data) {
-	  console.log(data);
+  	  recv += 1;
+  	  console.log(data)
 	if(data.substring(0,3) == "GET") {
 
 		var id = 0;
-		
+		console.log("NEW CONNECTECTION REQUESTED");
 		count += 1;
 
 		id = count;
 		data = data.substring(4);
-		sp.write("GIVE " + data + " " + id +"\n");
+		sp.write("GIVE " + data + " " + id + "\n");
 		proposed.push(id);
 	}
 	else {
@@ -68,7 +69,7 @@ function update() {
 	console.log(last_received);
 	for(var i = 0; i < attached.length; i++) {
 		last_received[i] += 1;
-		if(last_received[i] > 10) {
+		if(last_received[i] > 30) {
 			attached.splice(i, 1);
 			temperatures.splice(i, 1);
 			last_received.splice(i, 1);
@@ -76,9 +77,14 @@ function update() {
 		}
 	}
 	var avg = 0;
+	var tts = []
 	for(var i = 0; i < attached.length; i++) {
-		if(temperatures[i].length > 0)
+		if(temperatures[i].length > 0) {
 			avg += temperatures[i][temperatures[i].length - 1];
+			tts.push(temperatures[i][temperatures[i].length - 1]);
+		}
+		else
+			tts.push("Err");
 	}
 	avg /= attached.length;
 	if(isNaN(avg)) {
@@ -86,6 +92,7 @@ function update() {
 	}
 	console.log("------");
 	console.log(attached.length + " thermostats connected");
+	console.log(tts)
 	console.log("Average temp: " + avg);
 }
-setInterval(update, 1000);
+setInterval(update, 2000);
