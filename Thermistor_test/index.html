@@ -30,7 +30,7 @@
 				</div>
 			</div>
 			
-			<div class="panel panel-default" ng-repeat="list in data.temps track by $index">
+			<div class="panel panel-default">
 				<p id="graph"></p>
 			</div>
 		</div>
@@ -90,11 +90,11 @@
 							  ;
 
 							  chart.xAxis     //Chart x-axis settings
-								  .axisLabel('Time (ms)')
+								  .axisLabel('Time since on (s)')
 								  .tickFormat(d3.format(',r'));
 
 							  chart.yAxis     //Chart y-axis settings
-								  .axisLabel('Voltage (v)')
+								  .axisLabel('Temperature (C)')
 								  .tickFormat(d3.format('.02f'));
 
 							  /* Done setting the chart up? Time to render it!*/

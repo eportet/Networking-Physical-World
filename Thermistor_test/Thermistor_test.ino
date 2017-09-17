@@ -28,18 +28,15 @@ void loop() {
     int counter = 0;
     while(id == -1) {
       String message = "";
-      Serial.println(counter);
       while(true) {
         if(XBee.available() <= 0) {
           delay(100);
-          continue;ls
-          
-        }
+          continue;
+         }
         char in = char(XBee.read());
-        if (in == '\n')
+        if(in == '\n')
           break;
-
-        message += in;
+        message += char(in);
       }
       Serial.println(message);
       if(message.substring(0, looking.length()) == looking) {
@@ -48,14 +45,10 @@ void loop() {
         Serial.println("GOT ID");
         break;
       }
-      else {
-        counter += 1;
-        if(counter > 100)
-          return;
-      }
     }
   }
   
+  delay(1000);
   int voltage = analogRead(A0);
   double volts_across_therm = 5 - (5 * voltage / 1024.);
 
@@ -73,12 +66,15 @@ void loop() {
   double r = log(resistance/resistance_25);
   double temp =  1 / (a_1 + b_1 * r  + c_1 * r * r + d_1 * r * r * r);
   temp = temp - 273.15;
-  String tempS = String(id) + " " + String(temp) + "\n";
+  String tempS = String(id) + " " + String(temp);
   char chars[tempS.length()+1];
   tempS.toCharArray(chars, tempS.length()+1);
   Serial.println(chars);
   XBee.write(chars);
+  XBee.write("\n");
   Serial.println(temp);
 
+  
+  
   delay(2000);
 }
