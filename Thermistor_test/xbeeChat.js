@@ -95,4 +95,14 @@ function update() {
 	console.log(tts)
 	console.log("Average temp: " + avg);
 }
+
 setInterval(update, 2000);
+
+app.get('/temps', function(req, res){
+  res.send(temperatures);
+});
+
+http.listen(3000, function(){
+  console.log('listening on *:3000');
+});
+
