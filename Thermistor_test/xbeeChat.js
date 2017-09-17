@@ -9,7 +9,7 @@ var proposed = [];
 var count = 0;
 var portName = process.argv[2],
 portConfig = {
-	baudRate: 9600,
+	baudRate: 115200,
 	parser: SerialPort.parsers.readline("\n")
 };
 
@@ -89,3 +89,11 @@ function update() {
 	console.log("Average temp: " + avg);
 }
 setInterval(update, 1000);
+
+app.get('/temps', function(req, res){
+  res.send(temperatures);
+});
+
+http.listen(3000, function(){
+  console.log('listening on *:3000');
+});

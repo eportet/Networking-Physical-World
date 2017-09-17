@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Gnest Challenge 1</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<script src="https://d3js.org/d3.v3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+    </style>
+  </head>
+  <body>
+    <div ng-app="myApp" ng-controller="pageCtrl">
+		<nav class="navbar navbar-default">
+			<div class="navbar-header" style="margin-left: 20px; color: steelblue;">
+				<h2>Gnest Thermostat Viewer</h2>
+			</div>
+		</nav>
+		<div class="container-fluid">
+			<div class="panel panel-default">
+				<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
+					Summary
+				</div>
+				<div class="panel-body">
+					<p>Number of thermostats connected: {{data.num}}</p>
+					<p>Average Temperature: {{data.average}}</p>
+				</div>
+			</div>
+			
+			<div class="panel panel-default" ng-repeat="list in data.temps track by $index">
+				<p id="graph"></p>
+			</div>
+		</div>
+	</div>
+
+<script>
+	var app = angular.module("myApp", []);
+
+	app.controller("pageCtrl", ['$scope', '$interval', function($scope, $interval) {
+		$scope.data = {};
+		$scope.data.temps = [123123];
+		$scope.data.num = 0;
+		$scope.data.average = 0;
+		console.log("HI");
+		$scope.data.cd = 0;
+		
+		$scope.update = function() {
+			$.ajax({
+				type: "GET",
+				url: "/temps",
+				data: {zipCode: $scope.data.zipCode},
+				dataType: 'json',
+				jsonpCallback: "callback",
+				success: function(result) {
+				for(var i = 0; i < result.length; i++) {
+					for(var j = 0; j < result[i].length; j++) {
+						result[i][j] = parseFloat(result[i][j]);
+					}
+				}
+					$scope.data.temps = result;
+					$scope.data.num = $scope.data.temps.length;
+					$scope.data.average = 0;
+					var count = 0;
+					for(var i = 0; i < result.length; i++) {
+						if(result[i].length > 0) {
+							$scope.data.average += parseFloat(result[i][result[i].length - 1]);
+							count++;
+						}
+					}
+					$scope.data.average /= count;
+					console.log("HI2");
+					
+					if($scope.data.cd == 0) {
+						var dat = [];
+					    for(var i = 0; i < result.length; i++) {				
+							dat.push({values: result[i].map(function(x, i){return {x: i, y: x}}), key:"Thermostat" + i});
+						}
+					    var myData = dat;
+							  
+						nv.addGraph(function() {
+							  var chart = nv.models.lineChart()
+											.margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+											.useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+											.showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+											.showYAxis(true)        //Show the y-axis
+											.showXAxis(true)        //Show the x-axis
+							  ;
+
+							  chart.xAxis     //Chart x-axis settings
+								  .axisLabel('Time (ms)')
+								  .tickFormat(d3.format(',r'));
+
+							  chart.yAxis     //Chart y-axis settings
+								  .axisLabel('Voltage (v)')
+								  .tickFormat(d3.format('.02f'));
+
+							  /* Done setting the chart up? Time to render it!*/
+							
+								d3.select("#graph").selectAll("svg").remove();
+							  $scope.data.cv = d3.select('#graph').append("svg")    //Select the <svg> element you want to render the chart in.   
+								  .datum(myData)         //Populate the <svg> element with chart data...
+								  .call(chart);          //Finally, render the chart!
+
+							  //Update the chart when window resizes.
+							  nv.utils.windowResize(function() { chart.update() });
+							  return chart;
+							});
+					}
+					else {
+						$scope.data.cd.datum(myData);
+					}
+					
+					$scope.$apply();
+				},
+				failure: function(err) {
+					console.log("Failed");
+				}
+			})
+		}
+		$interval($scope.update, 2000);
+	}]);
+</script>
+  </body>
+</html>
