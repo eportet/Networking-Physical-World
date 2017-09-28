@@ -1,108 +1,98 @@
 var SerialPort = require("serialport");
-var app = require('express')();
-var http = require('http').Server(app);
-
+var mysql = require("mysql");
 var attached = [];
 var temperatures = [];
 var last_received = [];
 var proposed = [];
-var count = 500;
+var count = 0;
 var portName = process.argv[2],
 portConfig = {
 	baudRate: 115200,
 	parser: SerialPort.parsers.readline("\n")
 };
 
-var sp;
-sp = new SerialPort.SerialPort(portName, portConfig);
+var sp = new SerialPort.SerialPort(portName, portConfig);
 
-app.get('/', function(req, res){
-  res.sendfile('index.html');
+var con = mysql.createConnection({
+  host: "192.168.1.126",
+  user: "user",
+  password: "user",
+  database: "challenge2"
 });
-var recv = 0;
+
+con.query("SELECT * FROM id ORDER BY ID DESC LIMIT 1", function (err, result, fields) {
+	if (err) throw err;
+	var id = 0;
+	console.log(result);
+	if(result.length) {
+		id = result[0].id + 1;
+	}
+	console.log("HI");
+	console.log(id);
+});
+
+/**
+ * You first need to create a formatting function to pad numbers to two digits…
+ **/
+function twoDigits(d) {
+    if(0 <= d && d < 10) return "0" + d.toString();
+    if(-10 < d && d < 0) return "-0" + (-1*d).toString();
+    return d.toString();
+}
+
+/**
+ * …and then create the method to output the date string as desired.
+ * Some people hate using prototypes this way, but if you are going
+ * to apply this to more than one Date object, having it as a prototype
+ * makes sense.
+ **/
+Date.prototype.toMysqlFormat = function() {
+    return this.getFullYear() + "-" + twoDigits(1 + this.getMonth()) + "-" + twoDigits(this.getDate()) + " " + twoDigits(this.getHours()) + ":" + twoDigits(this.getMinutes()) + ":" + twoDigits(this.getSeconds());
+};
+
+
 sp.on("open", function () {
   console.log("Listening on Serial");
   sp.on('data', function(data) {
-  	  recv += 1;
-  	  console.log(data)
+	console.log(data);
 	if(data.substring(0,3) == "GET") {
+		
+		var valid = false;
+		  con.query("SELECT id FROM temperatures ORDER BY ID DESC LIMIT 1;", function (err, result, fields) {
+			if (err) return;
+			var id = 0;
+			console.log(result);
+			if(result.length == 0) {
+				id = 0;
+			}
+			else {
+				id = result[0].id + 1;
+			}
+			data = data.substring(4);
+			sp.write("GIVE " + data + " " + id + "\n");
+			
+			con.query("INSERT INTO id VALUES(" + id + ",0,0);", function (err, result) {
+				if (err) return;
+				console.log("Inserted into db");
+			});
+		  });
 
-		var id = 0;
-		console.log("NEW CONNECTECTION REQUESTED");
-		count += 1;
-
-		id = count;
-		data = data.substring(4);
-		sp.write("GIVE " + data + " " + id + "\n");
-		proposed.push(id);
 	}
 	else {
+		console.log("me run");
 		var id = data.substring(0, data.indexOf(" "));
 		var temp = data.substring(data.indexOf(" ") + 1);
-		
-		var prop = proposed.indexOf(parseInt(id));
-		if(prop >= 0 && attached.indexOf(parseInt(id)) < 0) {
-			proposed.slice(prop, 1);
-			attached.push(parseInt(id));
-			temperatures.push([]);
-			last_received.push(0);
-			console.log("ADDED" + id);
-			
-		}
-		
-		var index = attached.indexOf(parseInt(id));
-		if(index < 0)
-			return;
-		last_received[index] = 0;
-		temperatures[index].push(parseFloat(temp));
+
+		con.query("INSERT INTO temperatures VALUES(" + id + ",'" + (new Date(Date.now()).toMysqlFormat())  + "'," + parseFloat(temp) + ");", function (err, result) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log("Inserted into db");
+			});
 	}
   });
-});
+}); 
 
-function update() {
-	if(attached.length == 0) {
-		console.log("No thermostats!");
-		return;
-	}
-	
-	console.log(attached);
-	console.log(last_received);
-	for(var i = 0; i < attached.length; i++) {
-		last_received[i] += 1;
-		if(last_received[i] > 30) {
-			attached.splice(i, 1);
-			temperatures.splice(i, 1);
-			last_received.splice(i, 1);
-			i -= 1;
-		}
-	}
-	var avg = 0;
-	var tts = []
-	for(var i = 0; i < attached.length; i++) {
-		if(temperatures[i].length > 0) {
-			avg += temperatures[i][temperatures[i].length - 1];
-			tts.push(temperatures[i][temperatures[i].length - 1]);
-		}
-		else
-			tts.push("Err");
-	}
-	avg /= attached.length;
-	if(isNaN(avg)) {
-		avg = "No data yet";
-	}
-	console.log("------");
-	console.log(attached.length + " thermostats connected");
-	console.log(tts)
-	console.log("Average temp: " + avg);
-}
 
-setInterval(update, 2000);
-
-app.get('/temps', function(req, res){
-  res.send(temperatures);
-});
-
-http.listen(3000, function(){
-  console.log('listening on *:3000');
-});
 
