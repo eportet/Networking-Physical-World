@@ -52,6 +52,7 @@ Date.prototype.toMysqlFormat = function() {
 
 
 sp.on("open", function () {
+	
   console.log("Listening on Serial");
   sp.on('data', function(data) {
 	console.log(data);

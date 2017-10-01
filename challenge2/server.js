@@ -37,19 +37,53 @@ app.get('/', function(req, res){
 });
 
 app.get('/hist_temps', function(req, res){
-	console.log(req);
-	con.query("SELECT id FROM temperatures ORDER BY ID DESC LIMIT 1", function (err, result, fields) {
+	var query = req.query;
+	if(query.startTime.length < 5 || query.startTime.indexOf(":") < 1)
+		res.send({"Error": "Bad Start time"});
+	if(query.endTime.length < 5 || query.endTime.indexOf(":") < 1)
+		res.send({"Error": "Bad End time"});
+	if(query.startDate.length < 5)
+		res.send({"Error": "Bad Start Date"});
+	if(query.endDate.length < 5)
+		res.send({"Error": "Bad End Date"});
+	
+	var startTime = query.startTime;
+	var endTime = query.endTime;
+	
+	var start = new Date(query.startDate);
+	var end = new Date(query.endDate);	
+	var sH = parseInt(startTime.substring(0, startTime.indexOf(":")));
+	var sM = parseInt(startTime.substring(startTime.indexOf(":") + 1));
+	
+	var eH = parseInt(endTime.substring(0, endTime.indexOf(":")));
+	var eM = parseInt(endTime.substring(endTime.indexOf(":") + 1));
+	try {
+		start.setHours(sH);
+		start.setMinutes(sM);
+		
+		end.setHours(eH);
+		end.setMinutes(eM);
+	} catch (e) {
+		res.send({"Error": "Bad input"});
+		console.log(e);
+		return;
+	}
+	console.log(start.toMysqlFormat());
+	console.log(end.toMysqlFormat());
+	
+	con.query("SELECT * FROM temperatures WHERE timestamp BETWEEN \'" + start.toMysqlFormat() + "\' AND \'" + end.toMysqlFormat() + "\';", function (err, result, fields) {
 		if (err) throw err;
+		console.log(result);
 	});
 });
 
 app.get("/current", function(req, res){
-	console.log(req);
-	con.query("SELECT t1.* FROM temperatures t1 WHERE t1.timestamp = (SELECT MAX(t2.timestamp) FROM temperatures t2 WHERE t2.id = t1.id)", function (err, result, fields) {
+
+	con.query("SELECT t1.*, id.x, id.y FROM temperatures t1 INNER JOIN id ON id.id = t1.id WHERE t1.timestamp = (SELECT MAX(t2.timestamp) FROM temperatures t2 WHERE t2.id = t1.id)", function (err, result, fields) {
 		if (err) throw err;
 		var ans = [];
 		for(var i = 0; i < result.length; i++) {
-			ans.push({id: result[i].id, timestamp: result[i].timestamp, temp: result[i].temperature});
+			ans.push({id: result[i].id, timestamp: result[i].timestamp, temp: result[i].temperature, x: result[i].x, y: result[i].y});
 		}
 		res.send(ans);
 	});
