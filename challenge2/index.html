@@ -25,15 +25,46 @@
 					Summary
 				</div>
 				<div class="panel-body">
-					<p>Number of thermostats connected: {{data.num}}</p>
+					<p>Number of thermostats reading: {{data.num}}</p>
 					<p>Average Temperature: {{data.average}} °C</p>
 				</div>
 			</div>
 			
 			<div class="panel panel-default">
-				<p id="graph"></p>
+				<div class="panel-heading">
+					Historical
+				</div>
+				<div class="panel-body">
+					<div class="container-fluid">
+						<label>Start Date/Time</label>
+						<br />
+						<div class="row" style="display: inline-block;">
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.startDate" type='date' class="form-control" />
+							</div>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.startTime" type='text' class="form-control" placeholder="00:00"/>
+							</div>
+						</div>
+						<br />
+						<label>End Date/Time</label>
+						<br />
+						<div class="row" style="display: inline-block;">
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.endDate" type='date' class="form-control" />
+							</div>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.endTime" type='text' class="form-control" placeholder="00:00"/>
+							</div>
+						</div>
+						<br />
+						<button class="btn btn-primary" ng-click="getHistorics()">Display Data</button>
+	
+						<p id="graph"></p>
+					</div>
+				</div>
 			</div>
-			<button class="btn-primary" ng-click="data.pause=!data.pause">Pause</button>
+			<button class="btn btn-primary" ng-click="data.pause=!data.pause">Pause</button>
 		</div>
 	</div>
 
@@ -45,9 +76,62 @@
 		$scope.data.temps = [123123];
 		$scope.data.num = 0;
 		$scope.data.average = 0;
-		console.log("HI");
 		$scope.data.cd = 0;
 		$scope.data.pause=false;
+		
+		$scope.interpolate = function(data, x, y, res) {
+			
+		}
+		
+		$scope.getHistorics = function() {
+			$.ajax({
+				type: "GET",
+				url: "/hist_temps",
+				data: {startDate: $scope.data.startDate,
+						startTime: $scope.data.startTime, 
+						endDate: $scope.data.endDate, 
+						endTime: $scope.data.endTime },
+				dataType: 'json',
+				success: function(res) {
+				}
+			});
+		}
+		
+		$scope.updateCurrent = function() {
+			$.ajax({
+				type: "GET",
+				url: "/current",
+				data: {},
+				dataType: 'json',
+				success: function(res) {
+					console.log(res);
+					var avg = 0;
+					var count = 0;
+					var alive = [];
+					for(var i = 0; i < res.length; i++) {
+						if(new Date(2017,8,28,15,17,0) - new Date(res[i].timestamp) > 1000 * 60) {
+							console.log(new Date(2017,9,28,19,17,0) - new Date(res[i].timestamp));
+							console.log((new Date(2017,9,28,19,17,0)));
+							console.log((new Date(res[i].timestamp)));
+						}
+						else {
+							console.log("Added");
+							alive.push(res[i]);
+						}
+					}
+					
+					for(var i = 0; i < alive.length; i++) {
+						avg += alive[i].temp;
+					}
+					if(alive.length == 0)
+						return
+					avg /= alive.length;
+					$scope.data.average = avg;
+					$scope.data.num = alive.length;
+					$scope.$apply();
+				}
+			});
+		}
 		
 		$scope.update = function() {
 			if($scope.data.pause)
@@ -55,7 +139,7 @@
 			$.ajax({
 				type: "GET",
 				url: "/temps",
-				data: {zipCode: $scope.data.zipCode},
+				data: {},
 				dataType: 'json',
 				jsonpCallback: "callback",
 				success: function(result) {
@@ -124,7 +208,8 @@
 				}
 			})
 		}
-		$interval($scope.update, 2000);
+		$scope.updateCurrent();
+		$interval($scope.updateCurrent, 2000);
 	}]);
 </script>
   </body>
