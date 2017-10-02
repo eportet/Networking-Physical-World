@@ -171,8 +171,8 @@
 			}
 			
 			
-			var resX = 50.0;
-			var resY = 25.0;
+			var resX = 10.0;
+			var resY = 5.0;
 			var matrix = []
 			for(var i = 0; i < maxY * resY + 1; i++) {
 			matrix.push([]);
@@ -206,6 +206,7 @@
 		$scope.graphContour = function(ele, rawData) {
 			var data = [];
 			var maxData = 0;
+			var minData = 100000;
 			for(var i = 0; i < rawData.length; i++)
 			{
 				var tmpDay = rawData[i]
@@ -220,8 +221,13 @@
 					
 					if(tmpDay[j] > maxData)
 						maxData = tmpDay[j];
+					if(tmpDay[j] < minData)
+						minData = tmpDay[j];
 				}
 			}
+			
+			maxData = 35;
+			minData = 15;
 			
 			var dataLength = rawData.length
 			
@@ -255,6 +261,7 @@
 			
 			heatmap.append("rect")
 			.attr("max", maxData)
+			.attr("min", minData)
 			.attr("width", function(d) {return width/d.rowSize + 1})
 			.attr("height", height / dataLength + 1)
 			.attr("x", function(d) {return (d.x * width / d.rowSize)})
@@ -290,7 +297,7 @@
 			
 			colormapScale = d3.scale.linear()
 			.domain([0, width - padding])
-			.range([0, maxData]);
+			.range([minData, maxData]);
 			
 			colorbar.append("text")
 		  .attr("class", "colortext")
