@@ -37,6 +37,8 @@ app.get('/', function(req, res){
 });
 
 app.get('/hist_temps', function(req, res){
+	res.send([{id: 2, temp: 20, timestamp: "2017-09-28T19:16:30.000Z"},{id: 2, temp: 2, timestamp: "2017-09-28T19:18:30.000Z"},{id: 2, temp: 46, timestamp: "2017-09-28T19:29:30.000Z"}, {id: 2, temp: 20, timestamp: "2017-09-28T19:35:30.000Z"},{id: 2, temp: 2, timestamp: "2017-09-28T19:36:30.000Z"},{id: 2, temp: 46, timestamp: "2017-09-28T19:42:30.000Z"}, {id: 3, temp: 20, timestamp: "2017-09-28T19:16:30.000Z"},{id: 3, temp: 3, timestamp: "2017-09-28T19:18:30.000Z"},{id: 3, temp: 14, timestamp: "2017-09-28T19:29:30.000Z"}, {id: 3, temp: 20, timestamp: "2017-09-28T19:35:30.000Z"},{id: 3, temp: 20, timestamp: "2017-09-28T19:36:30.000Z"},{id: 3, temp: 80, timestamp: "2017-09-28T19:42:30.000Z"}]);
+	return;
 	var query = req.query;
 	if(query.startTime.length < 5 || query.startTime.indexOf(":") < 1)
 		res.send({"Error": "Bad Start time"});
@@ -73,12 +75,17 @@ app.get('/hist_temps', function(req, res){
 	
 	con.query("SELECT * FROM temperatures WHERE timestamp BETWEEN \'" + start.toMysqlFormat() + "\' AND \'" + end.toMysqlFormat() + "\';", function (err, result, fields) {
 		if (err) throw err;
-		console.log(result);
+		var ans = [];
+		for(var i = 0; i < result.length; i++) {
+			ans.push({id: result[i].id, timestamp: result[i].timestamp, temp: result[i].temperature});
+		}
+		res.send(ans);
 	});
 });
 
 app.get("/current", function(req, res){
-
+	res.send([{id: 2, temp: 200, timestamp: "2017-09-28T19:16:30.000Z",x: 0, y: 2},{id: 3, temp: 0, timestamp: "2017-09-28T19:18:30.000Z", x: 0, y: 0},{id: 4, temp: 0, timestamp: "2017-09-28T19:129:30.000Z", x: 2, y: 0}]);
+	return;
 	con.query("SELECT t1.*, id.x, id.y FROM temperatures t1 INNER JOIN id ON id.id = t1.id WHERE t1.timestamp = (SELECT MAX(t2.timestamp) FROM temperatures t2 WHERE t2.id = t1.id)", function (err, result, fields) {
 		if (err) throw err;
 		var ans = [];
@@ -90,6 +97,8 @@ app.get("/current", function(req, res){
 });
 
 app.get("/devices", function(req, res) {
+	res.send([{id: 506, x:7, y: 9}, {id: 50, x:7, y: 0}]);
+	return;
 	con.query("SELECT * FROM id", function (err, result, fields) {
 		if (err) throw err;
 		var ans = [];
@@ -99,6 +108,17 @@ app.get("/devices", function(req, res) {
 		res.send(ans);
 	});
 });
+
+app.get("/set_device", function(req, res) {
+	var x = req.query.x;
+	var y = req.query.y;
+	var id = req.query.id;
+	con.query("UPDATE id SET x=" + x + ", SET Y=" + y + "WHERE id=\'"+id+"\';", function (err, result, fields) {
+		if (err) throw err;
+	});
+	console.log("Donezo");
+});
+
 
 http.listen(3000, function(){
   console.log('listening on *:3000');
