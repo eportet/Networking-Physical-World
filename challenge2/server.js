@@ -107,7 +107,7 @@ app.get("/set_device", function(req, res) {
 	var x = req.query.x;
 	var y = req.query.y;
 	var id = req.query.id;
-	con.query("UPDATE id SET x=" + x + ", SET Y=" + y + "WHERE id=\'"+id+"\';", function (err, result, fields) {
+	con.query("UPDATE id SET x=" + x + ", y=" + y + " WHERE id="+id+";", function (err, result, fields) {
 		if (err) throw err;
 	});
 	console.log("Donezo");
