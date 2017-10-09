@@ -1,0 +1,11 @@
+ToggleAllIntent Toggle
+ToggleAllIntent Toggle all
+ToggleAllIntent All
+ToggleIntent Toggle ID {number}
+ToggleIntent Toggle {number}
+ToggleIntent ID {number} toggle
+ToggleIntent ID {number}
+ToggleIntent {number}
+StatusIntent {number} status
+StatusIntent Status ID {number}
+StatusIntent ID {number} status
