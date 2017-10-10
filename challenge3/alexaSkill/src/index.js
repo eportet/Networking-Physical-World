@@ -1,6 +1,7 @@
 'use strict';
 const http = require("http");
 var PASSWORD = process.env.PASSWORD
+var DOMAIN = 'http://128.197.175.187:9000'
 
 // Route the incoming request based on type (LaunchRequest, IntentRequest,
 // etc.) The JSON body of the request is provided in the event parameter.
@@ -117,7 +118,7 @@ function getWelcomeResponse(callback) {
 function handleToggleResponse(intent, session, callback) {
 	var id = intent.slots.number.value
 
-	http.get('http://128.197.175.187:9000/toggle?id=' + id + '&password=' + PASSWORD, (res) => {
+	http.get(DOMAIN + '/toggle?id=' + id + '&password=' + PASSWORD, (res) => {
 		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
 
@@ -162,7 +163,7 @@ function handleToggleResponse(intent, session, callback) {
 
 function handleToggleAllResponse(intent, session, callback) {
 
-	http.get('http://128.197.175.187:9000/toggle&password=' + PASSWORD, (res) => {
+	http.get(DOMAIN + '/toggle&password=' + PASSWORD, (res) => {
 		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
 
@@ -206,7 +207,7 @@ function handleToggleAllResponse(intent, session, callback) {
 function handleStatusResponse(intent, session, callback) {
 	var id = intent.slots.number.value    
 	
-	http.get('http://128.197.175.187:9000/get?id=' + id + '&password=' + PASSWORD, (res) => {
+	http.get(DOMAIN + '/get?id=' + id + '&password=' + PASSWORD, (res) => {
 		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
 
