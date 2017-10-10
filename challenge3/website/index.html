@@ -1,0 +1,99 @@
+
+<!doctype html>
+<html>
+<head>
+	<title>LED Controller</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<script src="https://d3js.org/d3.v3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<style>
+</style>
+</head>
+<body>
+	<div ng-app="myApp" ng-controller="pageCtrl">
+		<nav class="navbar navbar-default">
+			<div class="navbar-header" style="margin-left: 20px; color: steelblue;">
+				<h2>LED Controller Requests</h2>
+			</div>
+		</nav>
+		<div class="container-fluid">
+			<div class="panel panel-default">
+				<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
+					Credentials
+				</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-md-8" style="text-align: center;">
+							<div class="row">
+								<div class="col-md-3" style="text-align: center;"><label>Password</label></div>
+							</div>
+							<div class="row">
+								<div class="col-md-3"><input style="text-align: center;" type="password" ng-model="password" class="form-control"></input></div>
+								<div class="col-md-2"><button class="btn btn-primary" ng-click="">SET</button></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="panel panel-default">
+				<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
+					Action
+				</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-md-8" style="text-align: center;">
+							<div class="row">
+								<div class="col-md-3" style="text-align: center;"><label>ID</label></div>
+							</div>
+							<div class="row">
+								<div class="col-md-3"><input style="text-align: center;" type="text" ng-model="deviceId" class="form-control"></input></div>
+								<div class="col-md-2"><button class="btn btn-primary" ng-click="">TOGGLE</button></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<style>
+	.axis path,
+	.axis line {
+		fill: none;
+		stroke: black;
+		stroke-width: 2;
+		
+	}
+	.axis line,
+	.axis circle {
+		fill: none;
+		stroke: #666;
+		stroke-width: 1;
+		stroke-dasharray: 20, 5;
+	}
+	
+	
+	.axis2 line{
+		stroke: #000000;
+		stroke-width: 2px;
+		fill: none;
+	}
+	.axis2 path{
+		stroke: #000000;
+		stroke-width: 2px;
+		fill: none;
+	}
+	
+	rect {
+		stroke-width: 0px;
+	}
+</style>
+<script>
+	
+</script>
+</body>
+</html>
