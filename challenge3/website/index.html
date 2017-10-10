@@ -4,7 +4,7 @@
 <head>
 	<title>LED Controller</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+	<!-- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script> -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 	<script src="https://d3js.org/d3.v3.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.js"></script>
@@ -32,8 +32,8 @@
 								<div class="col-md-3" style="text-align: center;"><label>Password</label></div>
 							</div>
 							<div class="row">
-								<div class="col-md-3"><input style="text-align: center;" type="password" ng-model="password" class="form-control"></input></div>
-								<div class="col-md-2"><button class="btn btn-primary" ng-click="">SET</button></div>
+								<div class="col-md-3"><input style="text-align: center;" type="password" id="userPassword" class="form-control"></input></div>
+								<div class="col-md-2"><button class="btn btn-primary" onclick="savePassword();">SET</button></div>
 							</div>
 						</div>
 					</div>
@@ -42,17 +42,24 @@
 
 			<div class="panel panel-default">
 				<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
-					Action
+					Controller Action
 				</div>
 				<div class="panel-body">
 					<div class="row">
 						<div class="col-md-8" style="text-align: center;">
 							<div class="row">
+								<div class="col-md-3" style="text-align: center;"><label>Task</label></div>
 								<div class="col-md-3" style="text-align: center;"><label>ID</label></div>
 							</div>
 							<div class="row">
-								<div class="col-md-3"><input style="text-align: center;" type="text" ng-model="deviceId" class="form-control"></input></div>
-								<div class="col-md-2"><button class="btn btn-primary" ng-click="">TOGGLE</button></div>
+								<div class = "col-md-3"><select id="task" class="form-control ng-pristine ng-valid ng-empty ng-touched">
+								  <option value="status">Get Status</option>
+								  <option value="toggle">Toggle</option>
+								  <option value="turnOn">Turn LED On</option>
+								  <option value="turnOff">Turn LED Off</option>
+								</select></div>
+								<div class="col-md-3"><input style="text-align: center;" type="text" id="deviceId" class="form-control"></input></div>
+								<div class="col-md-2"><button class="btn btn-primary" onclick="httpGet();">Start</button></div>
 							</div>
 						</div>
 					</div>
@@ -93,7 +100,39 @@
 	}
 </style>
 <script>
+	var DOMAIN = "google.com";
+	var PASSWORD = "";
+
+	function savePassword()
+	{
+		PASSWORD = document.getElementById("userPassword").value;
+		alert(PASSWORD);
+	}
+
+	function setURL(type, task) {
+		var xmlHttp = new XMLHttpRequest();
+		var url = DOMAIN + task + "?id=" + document.getElementById("deviceId").value + "&password=" + PASSWORD;
+		xmlHttp.open(type, url, false);
+		xmlHttp.send(null);
+		var res = JSON.parse(xmlHttp.responseText);
+		console.log("IP: " + res);
+		return url;	
+	}
+
+	function httpGet() {
+		
+		if(document.getElementById("task").value == "status") {
+			console.log(setURL("GET", "/get"));
+		} else if (document.getElementById("task").value == "toggle") {
+			console.log(setURL("GET", "/toggle"));	
+		} else if (document.getElementById("task").value == "turnOn") {
+			console.log(setURL("GET", "/turnon"));	
+		} else if (document.getElementById("task").value == "turnOff") {
+			console.log(setURL("GET", "/turnoff"));	
+		}
+	}
 	
+
 </script>
 </body>
 </html>
