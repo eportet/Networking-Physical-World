@@ -8,7 +8,17 @@
 			}
 		]
 	},{
-		"intent": "ToggleAllIntent"
+		"intent": "OnOffIntent",
+      	"slots": [
+          {
+            "name": "state",
+            "type": "STATUS"
+          },
+          {
+            "name": "number",
+            "type": "AMAZON.NUMBER"
+          }
+        ]
 	}, {
 		"intent": "StatusIntent", 
 		"slots": [

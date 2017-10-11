@@ -68,8 +68,8 @@ exports.handler = function (event, context) {
 	// dispatch custom intents to handlers here
 	if (intentName == "ToggleIntent") {
 		handleToggleResponse(intent, session, callback)
-	} else if (intentName == "ToggleAllIntent") {
-		handleToggleAllResponse(intent, session, callback)
+	} else if (intentName == "OnOffIntent") {
+		handleOnOffResponse(intent, session, callback)
 	} else if (intentName == "StatusIntent") {
 		handleStatusResponse(intent, session, callback)
 	} else if (intentName == "AMAZON.YesIntent") {
@@ -161,9 +161,11 @@ function handleToggleResponse(intent, session, callback) {
 	});
 }
 
-function handleToggleAllResponse(intent, session, callback) {
+function handleOnOffResponse(intent, session, callback) {
+	var id = intent.slots.number.value
+	var state = intent.slots.state.value
 
-	http.get(DOMAIN + '/toggle&password=' + PASSWORD, (res) => {
+	http.get(DOMAIN + '/turn' + state + '?id=' + id + '&password=' + PASSWORD, (res) => {
 		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
 
