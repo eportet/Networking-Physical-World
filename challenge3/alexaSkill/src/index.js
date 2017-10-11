@@ -9,58 +9,52 @@ exports.handler = function (event, context) {
 	try {
 		console.log("event.session.application.applicationId=" + event.session.application.applicationId);
 
-		/**
-		 * Uncomment this if statement and populate with your skill's application ID to
-		 * prevent someone else from configuring a skill that sends requests to this function.
-		 */
-
-		 if (event.session.application.applicationId !== "amzn1.ask.skill.b70028a8-dcd2-405b-b049-ceb4ef3ecb2c") {
+		if (event.session.application.applicationId !== "amzn1.ask.skill.b70028a8-dcd2-405b-b049-ceb4ef3ecb2c") {
 			context.fail("Invalid Application ID");
-		 }
-
-		 if (event.session.new) {
+		}
+		if (event.session.new) {
 			onSessionStarted({requestId: event.request.requestId}, event.session);
-		 }
-
-		 if (event.request.type === "LaunchRequest") {
+		}
+		if (event.request.type === "LaunchRequest") {
 			onLaunch(event.request,
 				event.session,
 				function callback(sessionAttributes, speechletResponse) {
 					context.succeed(buildResponse(sessionAttributes, speechletResponse));
 				});
-		 } else if (event.request.type === "IntentRequest") {
+		} else if (event.request.type === "IntentRequest") {
 			onIntent(event.request,
 				event.session,
 				function callback(sessionAttributes, speechletResponse) {
 					context.succeed(buildResponse(sessionAttributes, speechletResponse));
-				});
-		 } else if (event.request.type === "SessionEndedRequest") {
+				}
+			);
+		} else if (event.request.type === "SessionEndedRequest") {
 			onSessionEnded(event.request, event.session);
 			context.succeed();
-		 }
-		} catch (e) {
-			context.fail("Exception: " + e);
 		}
-	};
+	} catch (e) {
+		context.fail("Exception: " + e);
+	}
+};
 
 /**
- * Called when the session starts.
- */
- function onSessionStarted(sessionStartedRequest, session) {
+* Called when the session starts.
+*/
+function onSessionStarted(sessionStartedRequest, session) {
 	// add any session init logic here
 }
 
-/**
- * Called when the user invokes the skill without specifying what they want.
- */
- function onLaunch(launchRequest, session, callback) {
+/*
+* Called when the user invokes the skill without specifying what they want.
+*/
+function onLaunch(launchRequest, session, callback) {
 	getWelcomeResponse(callback)
- }
+}
 
 /**
- * Called when the user specifies an intent for this skill.
- */
- function onIntent(intentRequest, session, callback) {
+* Called when the user specifies an intent for this skill.
+*/
+function onIntent(intentRequest, session, callback) {
 
 	var intent = intentRequest.intent
 	var intentName = intentRequest.intent.name;
@@ -88,12 +82,12 @@ exports.handler = function (event, context) {
 }
 
 /**
- * Called when the user ends the session.
- * Is not called when the skill returns shouldEndSession=true.
- */
- function onSessionEnded(sessionEndedRequest, session) {
+* Called when the user ends the session.
+* Is not called when the skill returns shouldEndSession=true.
+*/
+function onSessionEnded(sessionEndedRequest, session) {
 
- }
+}
 
 // ------- Skill specific logic -------
 
@@ -112,7 +106,6 @@ function getWelcomeResponse(callback) {
 	}
 
 	callback(sessionAttributes, buildSpeechletResponse(header, speechOutput, reprompt, shouldEndSession))
-
 }
 
 function handleToggleResponse(intent, session, callback) {
@@ -133,11 +126,11 @@ function handleToggleResponse(intent, session, callback) {
 			res.resume();
 			this.emit(':tell', "There was an error");
 		}
-		
-		var speechOutput = "You toggled device ID " + id + " Do you want to do anything else?" 
+
+		var speechOutput = "You toggled device ID " + id + ". " + "Do you want to do anything else?" 
 
 		var repromptText = "Do you want to do anything else?"
-		
+
 		var header = "Toggle ID"
 
 		var shouldEndSession = false
@@ -180,8 +173,7 @@ function handleOnOffResponse(intent, session, callback) {
 			res.resume();
 			this.emit(':tell', "There was an error");
 		}
-		var speechOutput = "You toggled all devices." + "Do you want to do anything else?"
-
+		var speechOutput = "You turned " + state + " device ID " + id + ". " + "Do you want to do anything else?"
 		var repromptText = "Do you want to do anything else?"
 		var header = "Toggle All"
 
@@ -193,13 +185,13 @@ function handleOnOffResponse(intent, session, callback) {
 		let rawData = '';
 		res.on('data', (chunk) => rawData += chunk);
 		res.on('end', () => {
-			try {
-				const parsedData = JSON.parse(rawData);
-				console.log(parsedData);
-			} catch (e) {
-				console.log(e.message);
-			}
-		});
+		try {
+			const parsedData = JSON.parse(rawData);
+			console.log(parsedData);
+		} catch (e) {
+			console.log(e.message);
+		}
+	});
 	}).on('error', (e) => {
 		console.log(`Got error: ${e.message}`);
 		this.emit(':tellWithCard', "Error", this.t('SKILL_NAME'), randomFact);
@@ -208,7 +200,7 @@ function handleOnOffResponse(intent, session, callback) {
 
 function handleStatusResponse(intent, session, callback) {
 	var id = intent.slots.number.value    
-	
+
 	http.get(DOMAIN + '/get?id=' + id + '&password=' + PASSWORD, (res) => {
 		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
@@ -280,14 +272,11 @@ function handleGetHelpRequest(intent, session, callback) {
 
 function handleFinishSessionRequest(intent, session, callback) {
 	// End the session with a "Good bye!" if the user wants to quit the game
-	callback(session.attributes,
-		buildSpeechletResponseWithoutCard("Closing the application!", "", true));
+	callback(session.attributes,buildSpeechletResponseWithoutCard("Closing the application!", "", true));
 }
 
 
 // ------- Helper functions to build responses for Alexa -------
-
-
 function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
 	return {
 		outputSpeech: {
@@ -331,8 +320,4 @@ function buildResponse(sessionAttributes, speechletResponse) {
 		sessionAttributes: sessionAttributes,
 		response: speechletResponse
 	};
-}
-
-function capitalizeFirst(s) {
-	return s.charAt(0).toUpperCase() + s.slice(1)
 }
