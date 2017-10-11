@@ -60,6 +60,7 @@
 								</select></div>
 								<div class="col-md-3"><input style="text-align: center;" type="text" id="deviceId" class="form-control"></input></div>
 								<div class="col-md-2"><button class="btn btn-primary" onclick="httpGet();">Start</button></div>
+								<div id="print"></div>
 							</div>
 						</div>
 					</div>
@@ -110,13 +111,24 @@
 	}
 
 	function setURL(type, task) {
-		var xmlHttp = new XMLHttpRequest();
-		var url = DOMAIN + task + "?id=" + document.getElementById("deviceId").value + "&password=" + PASSWORD;
-		xmlHttp.open(type, url, false);
-		xmlHttp.send(null);
-		var res = JSON.stringify(xmlHttp.responseText);
-		console.log(res);
-		return url;	
+		// var xmlHttp = new XMLHttpRequest();
+		// var url = "/" + task + "?id=" + document.getElementById("deviceId").value + "&password=" + PASSWORD;
+		// xmlHttp.open(type, url, false);
+		// xmlHttp.send();
+		// var res = JSON.stringify(xmlHttp.responseText);
+		// console.log(res);
+		// $("#print").text(res);
+		// return url;	
+
+		$.ajax({
+			type: "GET",
+			url: "/" + task,
+			data: {id: document.getElementById("deviceId").value, password: PASSWORD},
+			dataType: 'text',
+			success: function(result) {
+				$("#print").text(result);
+			},
+		});
 	}
 
 	function httpGet() {
