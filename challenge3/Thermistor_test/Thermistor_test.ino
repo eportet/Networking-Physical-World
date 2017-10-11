@@ -5,7 +5,7 @@ SoftwareSerial XBee(2, 3); // RX, TX
 
 int led_pin = 7;
 int state = 0;
-const int id = 123;
+const int id = 1;
 String pass = "";
 
 String getValue(String data, char separator, int index)

@@ -11,4 +11,5 @@ OnOffIntent ID {number} turn {state}
 OnOffIntent {number} {state}
 StatusIntent {number} status
 StatusIntent Status ID {number}
+StatusIntent Status {number}
 StatusIntent ID {number} status

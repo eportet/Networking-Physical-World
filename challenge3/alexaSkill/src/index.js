@@ -1,7 +1,7 @@
 'use strict';
 const http = require("http");
 var PASSWORD = process.env.PASSWORD
-var DOMAIN = 'http://128.197.175.187:9000'
+var DOMAIN = process.env.DOMAIN
 
 // Route the incoming request based on type (LaunchRequest, IntentRequest,
 // etc.) The JSON body of the request is provided in the event parameter.
@@ -158,7 +158,7 @@ function handleOnOffResponse(intent, session, callback) {
 	var id = intent.slots.number.value
 	var state = intent.slots.state.value
 
-	http.get(DOMAIN + '/turn' + state + '?id=' + id + '&password=' + PASSWORD, (res) => {
+	http.get(DOMAIN + '/led_' + state + '?id=' + id + '&password=' + PASSWORD, (res) => {
 		const statusCode = res.statusCode;
 		const contentType = res.headers['content-type'];
 
@@ -175,7 +175,7 @@ function handleOnOffResponse(intent, session, callback) {
 		}
 		var speechOutput = "You turned " + state + " device ID " + id + ". " + "Do you want to do anything else?"
 		var repromptText = "Do you want to do anything else?"
-		var header = "Toggle All"
+		var header = "TurnOnOff"
 
 		var shouldEndSession = false
 
