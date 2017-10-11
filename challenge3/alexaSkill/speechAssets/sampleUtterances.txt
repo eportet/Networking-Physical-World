@@ -1,0 +1,14 @@
+ToggleIntent Toggle ID {number}
+ToggleIntent Toggle {number}
+ToggleIntent ID {number} toggle
+ToggleIntent ID {number}
+ToggleIntent {number}
+OnOffIntent {state} {number}
+OnOffIntent Turn {state} {number}
+OnOffIntent Turn {state} ID {number}
+OnOffIntent ID {number} {state}
+OnOffIntent ID {number} turn {state}
+OnOffIntent {number} {state}
+StatusIntent {number} status
+StatusIntent Status ID {number}
+StatusIntent ID {number} status
