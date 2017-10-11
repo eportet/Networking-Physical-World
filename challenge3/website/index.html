@@ -53,8 +53,8 @@
 							</div>
 							<div class="row">
 								<div class = "col-md-3"><select id="task" class="form-control ng-pristine ng-valid ng-empty ng-touched">
-								  <option value="status">Get Status</option>
 								  <option value="toggle">Toggle</option>
+								  <option value="status">Get Status</option>
 								  <option value="turnOn">Turn LED On</option>
 								  <option value="turnOff">Turn LED Off</option>
 								</select></div>
@@ -100,13 +100,13 @@
 	}
 </style>
 <script>
-	var DOMAIN = "google.com";
+	var DOMAIN = "http://128.197.180.184:9000";
 	var PASSWORD = "";
 
 	function savePassword()
 	{
 		PASSWORD = document.getElementById("userPassword").value;
-		alert(PASSWORD);
+		//alert(PASSWORD);
 	}
 
 	function setURL(type, task) {
@@ -114,8 +114,8 @@
 		var url = DOMAIN + task + "?id=" + document.getElementById("deviceId").value + "&password=" + PASSWORD;
 		xmlHttp.open(type, url, false);
 		xmlHttp.send(null);
-		var res = JSON.parse(xmlHttp.responseText);
-		console.log("IP: " + res);
+		var res = JSON.stringify(xmlHttp.responseText);
+		console.log(res);
 		return url;	
 	}
 
@@ -126,9 +126,9 @@
 		} else if (document.getElementById("task").value == "toggle") {
 			console.log(setURL("GET", "/toggle"));	
 		} else if (document.getElementById("task").value == "turnOn") {
-			console.log(setURL("GET", "/turnon"));	
+			console.log(setURL("GET", "/led_on"));	
 		} else if (document.getElementById("task").value == "turnOff") {
-			console.log(setURL("GET", "/turnoff"));	
+			console.log(setURL("GET", "/led_off"));	
 		}
 	}
 	

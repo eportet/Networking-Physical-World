@@ -5,8 +5,8 @@ SoftwareSerial XBee(2, 3); // RX, TX
 
 int led_pin = 7;
 int state = 0;
-const int id = 1;
-String pass = "";
+const int id = 4;
+String pass = "password";
 
 String getValue(String data, char separator, int index)
 {
@@ -60,7 +60,7 @@ void setup() {
   int check = 0;
   EEPROM.get(500, check);
   if(check != 237) {
-    String password = String(id);
+    String password = String(pass);
     write(password, 0);
     pass = password;
     EEPROM.put(500, 237);
