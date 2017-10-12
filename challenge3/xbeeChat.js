@@ -19,7 +19,7 @@ sp.on("open", function() {
 
 		id = req.query.id;
 		password = req.query.password;
-
+		//console.log("Turn on device " + id);
 		sp.write("turn_on " + id + " " + password + "\n");
 		res.send("LED " + id + " turned on");
 	}); 
@@ -27,14 +27,15 @@ sp.on("open", function() {
 	app.get("/led_off", function(req, res) {
 		id = req.query.id;
 		password = req.query.password;
+		//console.log("Turn off device " + id);
 		sp.write("turn_off " + id + " " + password + "\n");
 		res.send("LED " + id + " turned off");
 	}); 
 
 	app.get("/toggle", function(req, res) {
-		console.log(req.query)
 		id = req.query.id;
 		password = req.query.password;
+		console.log("Toggle device " + id)
 		sp.write("toggle " + id + " " + password + "\n");
 		res.send("LED " + id + " toggled");
 	}); 
@@ -42,6 +43,7 @@ sp.on("open", function() {
 	app.get("/get", function(req, res) {
 		id = req.query.id;
 		password = req.query.password;
+		//console.log("Request status of device " + id);
 		sp.on('data', function(data) {
 			if(data == "1")
 				res.send("LED " + id + " is currently on");
@@ -55,12 +57,12 @@ sp.on("open", function() {
 	}); 
 
 	app.get("/set_pass", function(req, res) {
-		console.log("HIII")
 		id = req.query.id;
 		password = req.query.password;
-		newp = req.query.new;
+		newp = req.query.newp;
+		console.log("Changed id " + id + " password from " + password + " to " + newp)
 		sp.write("set_pass " + id + " " + password + " " + newp + "\n");
-		res.send("Password updated")
+		res.send("Password updated for device " + id);
 	});
 
 });

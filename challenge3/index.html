@@ -30,10 +30,13 @@
 						<div class="col-md-8" style="text-align: center;">
 							<div class="row">
 								<div class="col-md-3" style="text-align: center;"><label>Password</label></div>
+								<div class="col-md-3" style="text-align: center;"><label>New Password</label></div>
 							</div>
 							<div class="row">
-								<div class="col-md-3"><input style="text-align: center;" type="password" id="userPassword" class="form-control"></input></div>
-								<div class="col-md-2"><button class="btn btn-primary" onclick="setPassword();">SET</button></div>
+								<div class="col-md-3"><input style="text-align: center;" type="password" id="devicePassword" class="form-control"></input></div>
+								<div class="col-md-3"><input style="text-align: center;" type="password" id="newPassword" class="form-control"></input></div>
+								<div class="col-md-2"><button class="btn btn-primary" onclick="getValue();">SET</button></div>
+								<div id="printPass" style="text-align: center;"></div>
 							</div>
 						</div>
 					</div>
@@ -53,14 +56,15 @@
 							</div>
 							<div class="row">
 								<div class = "col-md-3"><select id="task" class="form-control ng-pristine ng-valid ng-empty ng-touched">
-								  <option value="toggle">Toggle</option>
-								  <option value="status">Get Status</option>
-								  <option value="turnOn">Turn LED On</option>
-								  <option value="turnOff">Turn LED Off</option>
+									<option value="toggle">Toggle</option>
+									<option value="status">Get Status</option>
+									<option value="turnOn">Turn LED On</option>
+									<option value="turnOff">Turn LED Off</option>
+									<option value="setPass">Change Password</option>
 								</select></div>
 								<div class="col-md-3"><input style="text-align: center;" type="text" id="deviceId" class="form-control"></input></div>
 								<div class="col-md-2"><button class="btn btn-primary" onclick="httpGet();">Start</button></div>
-								<div id="print"></div>
+								<div id="print" style="text-align: center;"></div>
 							</div>
 						</div>
 					</div>
@@ -68,7 +72,6 @@
 			</div>
 		</div>
 	</div>
-</body>
 <style>
 	.axis path,
 	.axis line {
@@ -102,19 +105,35 @@
 	}
 </style>
 <script>
-	var DOMAIN = "http://128.197.180.184:9000";
 	var PASSWORD = "";
+	var NPASS = "";
+	var ID = "";
+	var TASK = "";
 
-	function setPassword()
-	{
-		PASSWORD = document.getElementById("userPassword").value;
+	function getValue() {
+		PASSWORD = document.getElementById("devicePassword").value;
+		NPASS = document.getElementById("newPassword").value;
+		ID = document.getElementById("deviceId").value;
+		TASK = document.getElementById("task").value;
+	}
+
+	function setPassword() {
+			$.ajax({
+				type: "GET",
+				url: "/set_pass",
+				data: {id: ID, password: PASSWORD, newp: NPASS},
+				dataType: 'text',
+				success: function(result) {
+					$("#printPass").text(result);
+				},
+			});
 	}
 
 	function setURL(type, task) {
 		$.ajax({
 			type: "GET",
 			url: task,
-			data: {id: document.getElementById("deviceId").value, password: PASSWORD},
+			data: {id: ID, password: PASSWORD},
 			dataType: 'text',
 			success: function(result) {
 				$("#print").text(result);
@@ -123,18 +142,25 @@
 	}
 
 	function httpGet() {
+
+		getValue();
 		
-		if(document.getElementById("task").value == "status") {
-			console.log(setURL("GET", "/get"));
-		} else if (document.getElementById("task").value == "toggle") {
-			console.log(setURL("GET", "/toggle"));	
-		} else if (document.getElementById("task").value == "turnOn") {
-			console.log(setURL("GET", "/led_on"));	
-		} else if (document.getElementById("task").value == "turnOff") {
-			console.log(setURL("GET", "/led_off"));	
+		if(TASK == "status") {
+			setURL("GET", "/get");
+		} else if (TASK == "toggle") {
+			setURL("GET", "/toggle");	
+		} else if (TASK == "turnOn") {
+			setURL("GET", "/led_on");	
+		} else if (TASK == "turnOff") {
+			setURL("GET", "/led_off");	
+		} else if (TASK == "setPass") {
+			setPassword();
+			document.getElementById("devicePassword").value = NPASS;
+			document.getElementById("newPassword").value = "";
 		}
 	}
 	
 
 </script>
+</body>
 </html>
