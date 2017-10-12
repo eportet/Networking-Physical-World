@@ -33,7 +33,7 @@
 							</div>
 							<div class="row">
 								<div class="col-md-3"><input style="text-align: center;" type="password" id="userPassword" class="form-control"></input></div>
-								<div class="col-md-2"><button class="btn btn-primary" onclick="savePassword();">SET</button></div>
+								<div class="col-md-2"><button class="btn btn-primary" onclick="setPassword();">SET</button></div>
 							</div>
 						</div>
 					</div>
@@ -68,7 +68,8 @@
 			</div>
 		</div>
 	</div>
-	<style>
+</body>
+<style>
 	.axis path,
 	.axis line {
 		fill: none;
@@ -104,10 +105,9 @@
 	var DOMAIN = "http://128.197.180.184:9000";
 	var PASSWORD = "";
 
-	function savePassword()
+	function setPassword()
 	{
 		PASSWORD = document.getElementById("userPassword").value;
-		//alert(PASSWORD);
 	}
 
 	function setURL(type, task) {
@@ -137,5 +137,4 @@
 	
 
 </script>
-</body>
 </html>

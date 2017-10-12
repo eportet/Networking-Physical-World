@@ -21,14 +21,14 @@ sp.on("open", function() {
 		password = req.query.password;
 
 		sp.write("turn_on " + id + " " + password + "\n");
-		res.send("led turned on");
+		res.send("LED " + id + " turned on");
 	}); 
 
 	app.get("/led_off", function(req, res) {
 		id = req.query.id;
 		password = req.query.password;
 		sp.write("turn_off " + id + " " + password + "\n");
-		res.send("led turned off");
+		res.send("LED " + id + " turned off");
 	}); 
 
 	app.get("/toggle", function(req, res) {
@@ -36,7 +36,7 @@ sp.on("open", function() {
 		id = req.query.id;
 		password = req.query.password;
 		sp.write("toggle " + id + " " + password + "\n");
-		res.send("toggled led");
+		res.send("LED " + id + " toggled");
 	}); 
 
 	app.get("/get", function(req, res) {
@@ -44,9 +44,9 @@ sp.on("open", function() {
 		password = req.query.password;
 		sp.on('data', function(data) {
 			if(data == "1")
-				res.send("The LED is currently on");
+				res.send("LED " + id + " is currently on");
 			else
-				res.send("The LED is currently off");
+				res.send("LED " + id + " is currently off");
 			sp.removeAllListeners();
 		});
 
