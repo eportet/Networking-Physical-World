@@ -108,7 +108,7 @@
 	{
 			$.ajax({
 				type: "GET",
-				url: task,
+				url: '/set_pass',
 				data: {id: document.getElementById("deviceId").value, password: PASSWORD, newp: document.getElementById("userPassword").value},
 				dataType: 'text',
 				success: function(result) {
