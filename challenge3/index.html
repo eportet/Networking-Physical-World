@@ -106,8 +106,8 @@
 	}
 </style>
 <script>
-	var PASSWORD = "password";
-	var NPASS = "";
+	var PASSWORD;
+	var NPASS;
 
 	function savePassword() {
 		PASSWORD = document.getElementById("devicePassword").value;
@@ -149,7 +149,9 @@
 		} else if (document.getElementById("task").value == "turnOff") {
 			setURL("GET", "/led_off");	
 		} else if (document.getElementById("task").value == "setPass") {
-			setPassword();	
+			setPassword();
+			document.getElementById("devicePassword").value = NPASS;
+			document.getElementById("newPassword").value = "";
 		}
 	}
 	
