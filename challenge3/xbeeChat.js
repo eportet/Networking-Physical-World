@@ -58,9 +58,9 @@ sp.on("open", function() {
 		console.log("HIII")
 		id = req.query.id;
 		password = req.query.password;
-		newp = req.query.new;
+		newp = req.query.newp;
 		sp.write("set_pass " + id + " " + password + " " + newp + "\n");
-		res.send("Password updated")
+		res.send("Password updated for device " + id)
 	});
 
 });
