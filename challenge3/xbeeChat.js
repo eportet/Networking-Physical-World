@@ -60,7 +60,7 @@ sp.on("open", function() {
 		password = req.query.password;
 		newp = req.query.newp;
 		sp.write("set_pass " + id + " " + password + " " + newp + "\n");
-		res.send("Password updated for device " + id)
+		res.send("Password updated for id:" + id + " password:" + password + " newp:" + newp);
 	});
 
 });

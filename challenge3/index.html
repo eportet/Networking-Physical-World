@@ -34,6 +34,7 @@
 							<div class="row">
 								<div class="col-md-3"><input style="text-align: center;" type="password" id="userPassword" class="form-control"></input></div>
 								<div class="col-md-2"><button class="btn btn-primary" onclick="setPassword();">SET</button></div>
+								<div id="printPass" style="text-align: center;"></div>
 							</div>
 						</div>
 					</div>
@@ -102,17 +103,17 @@
 	}
 </style>
 <script>
-	var PASSWORD = "";
+	var PASSWORD = "password";
 
 	function setPassword()
 	{
 			$.ajax({
 				type: "GET",
-				url: '/set_pass',
+				url: "/set_pass",
 				data: {id: document.getElementById("deviceId").value, password: PASSWORD, newp: document.getElementById("userPassword").value},
 				dataType: 'text',
 				success: function(result) {
-					$("#print").text(result);
+					$("#printPass").text(result);
 				},
 			});
 	}
