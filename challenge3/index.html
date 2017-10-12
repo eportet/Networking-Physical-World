@@ -155,8 +155,8 @@
 			setURL("GET", "/led_off");	
 		} else if (TASK == "setPass") {
 			setPassword();
-			PASSWORD = NPASS;
-			NPASS = "";
+			document.getElementById("devicePassword").value = NPASS;
+			document.getElementById("newPassword").value = "";
 		}
 	}
 	
