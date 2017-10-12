@@ -60,7 +60,7 @@
 								</select></div>
 								<div class="col-md-3"><input style="text-align: center;" type="text" id="deviceId" class="form-control"></input></div>
 								<div class="col-md-2"><button class="btn btn-primary" onclick="httpGet();">Start</button></div>
-								<div id="print"></div>
+								<div id="print" style="text-align: center;"></div>
 							</div>
 						</div>
 					</div>
@@ -102,15 +102,23 @@
 	}
 </style>
 <script>
-	var DOMAIN = "http://128.197.180.184:9000";
 	var PASSWORD = "";
 
 	function setPassword()
 	{
-		PASSWORD = document.getElementById("userPassword").value;
+			$.ajax({
+				type: "GET",
+				url: task,
+				data: {id: document.getElementById("deviceId").value, password: PASSWORD, newp: document.getElementById("userPassword").value},
+				dataType: 'text',
+				success: function(result) {
+					$("#print").text(result);
+				},
+			});
 	}
 
 	function setURL(type, task) {
+		PASSWORD = document.getElementById("userPassword").value;
 		$.ajax({
 			type: "GET",
 			url: task,
@@ -125,13 +133,13 @@
 	function httpGet() {
 		
 		if(document.getElementById("task").value == "status") {
-			console.log(setURL("GET", "/get"));
+			setURL("GET", "/get");
 		} else if (document.getElementById("task").value == "toggle") {
-			console.log(setURL("GET", "/toggle"));	
+			setURL("GET", "/toggle");	
 		} else if (document.getElementById("task").value == "turnOn") {
-			console.log(setURL("GET", "/led_on"));	
+			setURL("GET", "/led_on");	
 		} else if (document.getElementById("task").value == "turnOff") {
-			console.log(setURL("GET", "/led_off"));	
+			setURL("GET", "/led_off");	
 		}
 	}
 	
