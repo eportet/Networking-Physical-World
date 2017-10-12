@@ -118,7 +118,7 @@
 			$.ajax({
 				type: "GET",
 				url: "/set_pass",
-				data: {id: document.getElementById("deviceId").value, password: document.getElementById("devicePassword").value;, newp: document.getElementById("newPassword").value},
+				data: {id: document.getElementById("deviceId").value, password: document.getElementById("devicePassword").value, newp: document.getElementById("newPassword").value},
 				dataType: 'text',
 				success: function(result) {
 					$("#printPass").text(result);
