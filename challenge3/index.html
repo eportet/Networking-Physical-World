@@ -106,19 +106,18 @@
 	}
 </style>
 <script>
-	var PASSWORD;
-	var NPASS;
+	var PASSWORD = document.getElementById("devicePassword").value;
+	var NPASS = document.getElementById("newPassword").value;
+	var ID = document.getElementById("deviceId").value;
 
 	function savePassword() {
-		PASSWORD = document.getElementById("devicePassword").value;
-		NPASS = document.getElementById("newPassword").value;	
 	}
 
 	function setPassword() {
 			$.ajax({
 				type: "GET",
 				url: "/set_pass",
-				data: {id: document.getElementById("deviceId").value, password: document.getElementById("devicePassword").value, newp: document.getElementById("newPassword").value},
+				data: {id: ID, password: PASSWORD, newp: NPASS},
 				dataType: 'text',
 				success: function(result) {
 					$("#printPass").text(result);
@@ -130,7 +129,7 @@
 		$.ajax({
 			type: "GET",
 			url: task,
-			data: {id: document.getElementById("deviceId").value, password: PASSWORD},
+			data: {id: ID, password: PASSWORD},
 			dataType: 'text',
 			success: function(result) {
 				$("#print").text(result);
@@ -150,7 +149,7 @@
 			setURL("GET", "/led_off");	
 		} else if (document.getElementById("task").value == "setPass") {
 			setPassword();
-			document.getElementById("devicePassword").value = document.getElementById("newPassword").value;
+			document.getElementById("devicePassword").value = NPASS;
 			document.getElementById("newPassword").value = "";
 		}
 	}
