@@ -118,7 +118,7 @@
 			$.ajax({
 				type: "GET",
 				url: "/set_pass",
-				data: {id: document.getElementById("deviceId").value, password: PASSWORD, newp: NPASS},
+				data: {id: document.getElementById("deviceId").value, password: document.getElementById("devicePassword").value;, newp: document.getElementById("newPassword").value},
 				dataType: 'text',
 				success: function(result) {
 					$("#printPass").text(result);
@@ -150,7 +150,7 @@
 			setURL("GET", "/led_off");	
 		} else if (document.getElementById("task").value == "setPass") {
 			setPassword();
-			document.getElementById("devicePassword").value = NPASS;
+			document.getElementById("devicePassword").value = document.getElementById("newPassword").value;
 			document.getElementById("newPassword").value = "";
 		}
 	}
