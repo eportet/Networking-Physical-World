@@ -1,0 +1,532 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Reindeer Lights</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<script src="https://d3js.org/d3.v3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+    </style>
+  </head>
+  <body>
+    <div ng-app="myApp" ng-controller="pageCtrl">
+		<nav class="navbar navbar-default">
+			<div class="navbar-header" style="margin-left: 20px; color: steelblue;">
+				<h2>Reindeer Light Control</h2>
+			</div>
+		</nav>
+		<div class="container-fluid">
+			<div class="panel panel-default">
+				<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
+					Controls
+				</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-md-3 col-lg-3" style="text-align: center;">
+							<p>Number of thermostats reading: {{data.num}}</p>
+							<p>Average Temperature: {{data.average}} °C</p>
+							<div class="row">
+								<div class="col-md-3 col-lg-3"></div>
+								<div class="col-md-6 col-lg-6">
+									<select ng-model="data.selected" class="form-control" ng-options="id as id.id for id in data.devices">
+									</select>
+								</div>
+								<div class="col-md-3 col-lg-3"></div>
+							</div>
+							<div class="row">
+								<div class="col-md-6 col-lg-6" style="text-align: center;"><label> X</label></div>
+								<div class="col-md-6 col-lg-6" style="text-align: center;"><label> Y</label></div>
+							</div>
+							<div class="row">
+								<div class="col-md-6 col-lg-6"><input style="text-align: center;" type="text" ng-model="data.selected.x" class="form-control"></input></div>
+								<div class="col-md-6 col-lg-6"><input style="text-align: center;" type="text" ng-model="data.selected.y"  class="form-control"></input></div>
+							</div>
+							<div class="row">
+								<div class="col-md-3 col-lg-3"></div>
+								<div class="col-md-6 col-lg-6">
+									<button class="btn btn-primary" ng-click="set(data.selected)">Set new position</button>
+								</div>
+								<div class="col-md-3 col-lg-3"></div>
+							</div>
+						</div>
+						<div class="col-md-9 col-lg-9" style="text-align: center;">
+							<h4>Room Temperature</h4>
+							<p id="contour"></p>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					Historical
+				</div>
+				<div class="panel-body">
+					<div class="container-fluid">
+						<label>Start Date/Time</label>
+						<br />
+						<div class="row" style="display: inline-block;">
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.startDate" type='date' class="form-control" />
+							</div>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.startTime" type='text' class="form-control" placeholder="00:00"/>
+							</div>
+						</div>
+						<br />
+						<label>End Date/Time</label>
+						<br />
+						<div class="row" style="display: inline-block;">
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.endDate" type='date' class="form-control" />
+							</div>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input ng-model="data.endTime" type='text' class="form-control" placeholder="00:00"/>
+							</div>
+						</div>
+						<br />
+						<button class="btn btn-primary" ng-click="getHistorics()">Display Data</button>
+	
+						<p id="graph"></p>
+					</div>
+				</div>
+			</div>
+			<button class="btn btn-primary" ng-click="data.pause=!data.pause">Pause</button>
+		</div>
+	</div>
+<style>
+	.axis path,
+	.axis line {
+		fill: none;
+		stroke: black;
+		stroke-width: 2;
+		
+	}
+
+	.axis line,
+	.axis circle {
+	  fill: none;
+	  stroke: #666;
+	  stroke-width: 1;
+	  stroke-dasharray: 20, 5;
+	}
+	
+	
+	.axis2 line{
+		stroke: #000000;
+		stroke-width: 2px;
+		fill: none;
+	}
+	.axis2 path{
+		stroke: #000000;
+		stroke-width: 2px;
+		fill: none;
+	}
+	
+	rect {
+		stroke-width: 0px;
+	}
+</style>
+<script>
+	function fillFunc(d)
+	{
+		var maxData = d3.select(this).attr("max") 
+		var hue = -d["y"] / maxData * 280 + 280;
+		var lite = (-.3 * (hue - 140) / 140 * (hue - 140) / 140) + .7;
+		if(hue < 30)
+			return d3.hsl(hue, 1,lite).toString()
+		else
+			return d3.hsl(hue, 1,lite).toString()
+		
+	}
+	var app = angular.module("myApp", []);
+
+	app.controller("pageCtrl", ['$scope', '$interval', function($scope, $interval) {
+		$scope.data = {};
+		$scope.data.temps = [123123];
+		$scope.data.num = 0;
+		$scope.data.average = 0;
+		$scope.data.cd = 0;
+		$scope.data.pause=false;
+		$scope.data.startTime = "12:00";
+		$scope.data.endTime = "20:00";
+		$scope.data.startDate = new Date(2017,8,28);
+		$scope.data.endDate = new Date(2017,8,28);
+		$scope.interpolate = function(data, x, y, res) {
+			
+		}
+		
+		$scope.interp = function(data) {
+			var maxX = 0;
+			var maxY = 0;
+			for(var i = 0; i < data.length; i++) {
+				if(data[i].x > maxX)
+					maxX = data[i].x
+				if(data[i].y > maxY)
+					maxY = data[i].y
+			}
+			
+			
+			var resX = 10.0;
+			var resY = 5.0;
+			var matrix = []
+			for(var i = 0; i < maxY * resY + 1; i++) {
+			matrix.push([]);
+				for(var j = 0; j < maxX * resX + 1; j++) {
+					var done = false;
+					for(var k = 0; k < data.length; k++) {
+						if((data[k].y == (i / resY)) && (data[k].x == (j / resX))) {
+							done = true;
+							matrix[matrix.length - 1].push(data[k].temp);
+							break;
+						}
+					}
+					if(done) continue;
+					var dists = [] 
+					var sum = 0;
+					for(var k = 0; k < data.length; k++) {
+						dists.push(1 / Math.sqrt(Math.pow(i / resY - data[k].y, 2) + Math.pow(j / resX - data[k].x, 2)));
+						sum += dists[dists.length - 1];
+					}
+					var value = 0;
+					for(var k = 0; k < data.length; k++) {
+						value += dists[k] / sum * data[k].temp;
+					}
+					matrix[matrix.length - 1].push(value);
+					
+				}
+			}
+			return matrix.reverse();
+		}
+		
+		$scope.graphContour = function(ele, rawData) {
+			var data = [];
+			var maxData = 0;
+			var minData = 100000;
+			for(var i = 0; i < rawData.length; i++)
+			{
+				var tmpDay = rawData[i]
+				for(var j = 0; j < tmpDay.length; j++)
+				{
+					tmpObj = {};
+					tmpObj.x = j; 
+					tmpObj.row = i;
+					tmpObj.y = tmpDay[j]
+					tmpObj.rowSize = tmpDay.length
+					data.push(tmpObj)
+					
+					if(tmpDay[j] > maxData)
+						maxData = tmpDay[j];
+					if(tmpDay[j] < minData)
+						minData = tmpDay[j];
+				}
+			}
+			
+			maxData = 35;
+			minData = 15;
+			
+			var dataLength = rawData.length
+			
+			var padding = 40;
+			var width = 600;
+			var height = 300;
+			
+			var xScale = d3.scale.linear().range([0, width])
+			var yScale = d3.scale.linear().range([height, 0])
+			
+			var xAxis = d3.svg.axis()
+				.scale(xScale)
+				.orient("bottom")
+			var yAxis = d3.svg.axis()
+				.scale(yScale)
+				.orient("left")
+			d3.select(ele).selectAll("svg").remove();
+			var vis = d3.select(ele).append("svg")
+			.attr("width", width + padding)
+			.attr("height", height + padding + 100)
+			.append("g")
+			.attr("transform", "translate(" + padding / 2 + ", " + padding / 2 + ")");
+			
+				
+			xScale.domain([0, 1])
+			yScale.domain([0, dataLength])
+			
+			var heatmap = vis.append("g").selectAll("rect")
+			.data(data)
+			.enter()
+			
+			heatmap.append("rect")
+			.attr("max", maxData)
+			.attr("min", minData)
+			.attr("width", function(d) {return width/d.rowSize + 1})
+			.attr("height", height / dataLength + 1)
+			.attr("x", function(d) {return (d.x * width / d.rowSize)})
+			.attr("y", function(d) {return (d.row * height / dataLength)})
+			.style("fill", fillFunc)
+			
+			secWidth = Math.floor((width) / 30);
+			recDat = []
+			for(var i = 0; i < width; i += secWidth)
+			{
+				recDat.push(i);
+			}
+
+			recDat[recDat.length - 1] = width - padding - secWidth;
+			
+			var colorbar = vis.append("g").selectAll("rect")
+			.data(recDat)
+			.enter()
+			
+			colorbar.append("rect")
+			.attr("width", secWidth + 1)
+			.attr("height", height / 10)
+			.attr("x", function(d) {return d + padding / 4})
+			.attr("y", height + 20)
+			.style("fill", function (d) {
+				var hue = -d / (width - padding) * 280 + 280;
+				var lite = (-.3 * (hue - 140) / 140 * (hue - 140) / 140) + .7;
+				if(hue < 30)
+					return d3.hsl(hue, 1,lite).toString()
+				else
+					return d3.hsl(hue, 1,lite).toString()
+			});
+			
+			colormapScale = d3.scale.linear()
+			.domain([0, width - padding])
+			.range([minData, maxData]);
+			
+			colorbar.append("text")
+		  .attr("class", "colortext")
+		  .attr("x", function(d) { return d + secWidth / 2})
+		  .attr("y", ((height +60)))
+		  .attr("dy", ".35em")
+		  .text(function(d) { if(d % (secWidth * 10) == 0 || d >= (width - secWidth * 2)) return colormapScale(d) | 0; else return "";});
+		
+		colorbar.append("text")
+		  .attr("class", "colortext")
+		  .attr("x", (width - 2 * padding) / 2)
+		  .attr("y", ((height) + 10))
+		  .attr("dy", ".35em")
+		  .text(function (d) {if(d == 0) return " Temperature °C"; else return ""});
+		}
+		
+		//$scope.graphContour("#graph", [[5,4,3,2,1],[5,4,3,2,1],[5,4,3,2,1],[5,4,3,2,1],[1,2,3,4,5]]);
+		
+		$scope.getHistorics = function() {
+			$.ajax({
+				type: "GET",
+				url: "/hist_temps",
+				data: {startDate: $scope.data.startDate,
+						startTime: $scope.data.startTime, 
+						endDate: $scope.data.endDate, 
+						endTime: $scope.data.endTime },
+				dataType: 'json',
+				success: function(res) {
+					var ids = [];
+					
+					for(var i = 0; i < res.length; i++) {
+						if(ids.indexOf(res[i].id) < 0)
+							ids.push(res[i].id);
+					}
+					console.log(ids);
+					
+					var dat = [];
+					for(var i = 0; i < ids.length; i++) {	
+						var data = [];
+						for(var j = 0; j < res.length; j++) {
+							if(res[j].id == ids[i])
+								data.push({x: new Date(res[j].timestamp), y: res[j].temp});
+						}
+						data.sort(function (a, b) {
+						  return a.x - b.x;
+						});
+						dat.push({values: data, key:"Thermostat " + ids[i]});
+					}
+					var myData = dat;
+					console.log(myData);
+					nv.addGraph(function() {
+							  var chart = nv.models.lineWithFocusChart()
+											.margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+											.useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+											.showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+											.showYAxis(true)        //Show the y-axis
+											.showXAxis(true)        //Show the x-axis
+							  ;
+							  chart.lines.xScale(d3.time.scale());
+							  chart.xAxis
+					 			.axisLabel('Date/Time')
+					 			.tickFormat(function(d) { 
+					 		          return d3.time.format('%H:%M')(new Date(d)) 
+					 		    });
+
+					 		chart.x2Axis
+					 			.axisLabel('Date/Time')
+					 			.tickFormat(function(d) { 
+					 		          return d3.time.format('%x')(new Date(d)) 
+					 		    });
+
+							  chart.yAxis     //Chart y-axis settings
+								  .axisLabel('Temperature (°C)')
+								  .tickFormat(d3.format('.02f'));
+
+							  /* Done setting the chart up? Time to render it!*/
+							
+								d3.select("#graph").selectAll("svg").remove();
+							  $scope.data.cv = d3.select('#graph').append("svg").attr("height", 400)    //Select the <svg> element you want to render the chart in.   
+								  .datum(myData)         //Populate the <svg> element with chart data...
+								  .call(chart);          //Finally, render the chart!
+
+							  //Update the chart when window resizes.
+							  nv.utils.windowResize(function() { chart.update() });
+							  return chart;
+							});
+				}
+			});
+		}
+		
+		$scope.updateCurrent = function() {
+			$.ajax({
+				type: "GET",
+				url: "/current",
+				data: {},
+				dataType: 'json',
+				success: function(res) {
+					console.log(res);
+					var avg = 0;
+					var count = 0;
+					var alive = [];
+					for(var i = 0; i < res.length; i++) {
+						if(Date.now() - new Date(res[i].timestamp) > 1000 * 60) {
+						}
+						else {
+							console.log("Added");
+							alive.push(res[i]);
+						}
+					}
+					
+					for(var i = 0; i < alive.length; i++) {
+						avg += alive[i].temp;
+					}
+					if(alive.length == 0)
+						return
+					avg /= alive.length;
+					$scope.data.average = avg;
+					$scope.data.num = alive.length;
+					$scope.graphContour("#contour", $scope.interp(res));
+					$scope.$apply();
+				}
+			});
+		}
+		
+		$scope.getDevices = function() {
+			$.ajax({
+				type: "GET",
+				url: "/devices",
+				data: {},
+				dataType: 'json',
+				jsonpCallback: "callback",
+				success: function(result) {
+					$scope.data.devices = result;
+					$scope.data.selected = result[0];
+				}
+			});
+		}
+		
+		$scope.set = function(x) {
+			$.ajax({
+				type: "GET",
+				url: "/set_device",
+				data: {x: x.x, y: x.y, id: x.id},
+				dataType: 'json',
+				jsonpCallback: "callback",
+				success: function(result) {
+				}
+			});
+		}
+		
+		$scope.update = function() {
+			if($scope.data.pause)
+				return
+			$.ajax({
+				type: "GET",
+				url: "/temps",
+				data: {},
+				dataType: 'json',
+				jsonpCallback: "callback",
+				success: function(result) {
+				for(var i = 0; i < result.length; i++) {
+					for(var j = 0; j < result[i].length; j++) {
+						result[i][j] = parseFloat(result[i][j]);
+					}
+				}
+					$scope.data.temps = result;
+					$scope.data.num = $scope.data.temps.length;
+					$scope.data.average = 0;
+					var count = 0;
+					for(var i = 0; i < result.length; i++) {
+						if(result[i].length > 0) {
+							$scope.data.average += parseFloat(result[i][result[i].length - 1]);
+							count++;
+						}
+					}
+					$scope.data.average /= count;
+					console.log("HI2");
+					
+					if($scope.data.cd == 0) {
+						var dat = [];
+					    for(var i = 0; i < result.length; i++) {				
+							dat.push({values: result[i].map(function(x, i){return {x: i, y: x}}), key:"Thermostat" + i});
+						}
+					    var myData = dat;
+							  
+						nv.addGraph(function() {
+							  var chart = nv.models.lineWithFocusChart()
+											.margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+											.useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+											.showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+											.showYAxis(true)        //Show the y-axis
+											.showXAxis(true)        //Show the x-axis
+							  ;
+
+							  chart.xAxis     //Chart x-axis settings
+								  .axisLabel('Time since on (seconds)')
+								  .tickFormat(d3.format(',r'));
+
+							  chart.yAxis     //Chart y-axis settings
+								  .axisLabel('Temperature (°C)')
+								  .tickFormat(d3.format('.02f'));
+
+							  /* Done setting the chart up? Time to render it!*/
+							
+								d3.select("#graph").selectAll("svg").remove();
+							  $scope.data.cv = d3.select('#graph').append("svg").attr("height", 400)    //Select the <svg> element you want to render the chart in.   
+								  .datum(myData)         //Populate the <svg> element with chart data...
+								  .call(chart);          //Finally, render the chart!
+
+							  //Update the chart when window resizes.
+							  nv.utils.windowResize(function() { chart.update() });
+							  return chart;
+							});
+					}
+					else {
+						$scope.data.cd.datum(myData);
+					}
+					
+					$scope.$apply();
+				},
+				failure: function(err) {
+					console.log("Failed");
+				}
+			})
+		}
+		$scope.updateCurrent();
+		$scope.getDevices();
+		$interval($scope.updateCurrent, 2000);
+	}]);
+</script>
+  </body>
+</html>
