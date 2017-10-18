@@ -35,7 +35,7 @@ var con = mysql.createConnection({
 app.get('/', function(req, res){
   res.sendfile('index.html');
 });
-
+/* 
 app.get('/hist_temps', function(req, res){
 	var query = req.query;
 	if(query.startTime.length < 5 || query.startTime.indexOf(":") < 1)
@@ -111,7 +111,7 @@ app.get("/set_device", function(req, res) {
 		if (err) throw err;
 	});
 	console.log("Donezo");
-});
+}); */
 
 
 http.listen(3000, function(){

@@ -1,7 +1,7 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var mysql = require("mysql");
-
+var ids = [];
 
 /**
  * You first need to create a formatting function to pad numbers to two digits…
@@ -28,7 +28,7 @@ var con = mysql.createConnection({
   host: "192.168.1.126",
   user: "user",
   password: "user",
-  database: "challenge2"
+  database: "challenge4"
 });
 
 
@@ -36,9 +36,40 @@ app.get('/', function(req, res){
   res.sendfile('index.html');
 });
 
-app.get('/data', function(req, res)) {
-	console.log("SUP BITCHES.")
-}
+var addEntry = function(id, timetamp, temp) {
+	con.query("INSERT INTO temperatures VALUES('" + id + "','" + (new Date(timetamp).toMysqlFormat())  + "'," + parseFloat(temp) + ");", function (err, result) {
+			if (err) {
+				console.log(err);
+				return;
+			}
+			console.log("Inserted into db");
+		});
+};
+
+app.get('/data', function(req, res) {
+	res.send("HI");
+	console.log(req.query);
+	var id = req.query.coreid;
+	console.log(id);
+	console.log(ids);
+	if(ids.indexOf(id) >= 0) {
+		addEntry(id, req.query.published_at, req.query.field1);
+	}
+	else {
+		con.query("SELECT * FROM id WHERE id = '" + id + "';", function (err, result, fields) {
+			if (err) throw err;
+			console.log(result)
+			if(!result.length) {
+				con.query("INSERT INTO id VALUES('" + id + "',0,0);", function (err, result) {
+					if (err) return;
+					console.log("Added new id");
+					addEntry(id, req.query.published_at, req.query.field_1);
+				});
+			} 
+			ids.push(id);
+		});
+	}
+});
  
 app.get('/hist_temps', function(req, res){
 	var query = req.query;
@@ -76,7 +107,7 @@ app.get('/hist_temps', function(req, res){
 	console.log(end.toMysqlFormat());
 	
 	con.query("SELECT * FROM temperatures WHERE timestamp BETWEEN \'" + start.toMysqlFormat() + "\' AND \'" + end.toMysqlFormat() + "\';", function (err, result, fields) {
-		if (err) throw err;
+		if (err) {res.send(err); return;}
 		var ans = [];
 		for(var i = 0; i < result.length; i++) {
 			ans.push({id: result[i].id, timestamp: result[i].timestamp, temp: result[i].temperature});
@@ -87,7 +118,7 @@ app.get('/hist_temps', function(req, res){
 
 app.get("/current", function(req, res){
 	con.query("SELECT t1.*, id.x, id.y FROM temperatures t1 INNER JOIN id ON id.id = t1.id WHERE t1.timestamp = (SELECT MAX(t2.timestamp) FROM temperatures t2 WHERE t2.id = t1.id)", function (err, result, fields) {
-		if (err) throw err;
+		if (err) {res.send(err); return;}
 		var ans = [];
 		for(var i = 0; i < result.length; i++) {
 			ans.push({id: result[i].id, timestamp: result[i].timestamp, temp: result[i].temperature, x: result[i].x, y: result[i].y});
@@ -98,7 +129,7 @@ app.get("/current", function(req, res){
 
 app.get("/devices", function(req, res) {
 	con.query("SELECT * FROM id", function (err, result, fields) {
-		if (err) throw err;
+		if (err) {res.send(err); return;}
 		var ans = [];
 		for(var i = 0; i < result.length; i++) {
 			ans.push({id: result[i].id, x: result[i].x, y: result[i].y});
@@ -112,7 +143,7 @@ app.get("/set_device", function(req, res) {
 	var y = req.query.y;
 	var id = req.query.id;
 	con.query("UPDATE id SET x=" + x + ", y=" + y + " WHERE id="+id+";", function (err, result, fields) {
-		if (err) throw err;
+		if (err) {res.send(err); return;}
 	});
 	console.log("Donezo");
 }); 
