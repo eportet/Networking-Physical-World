@@ -107,8 +107,6 @@ void loop() {
       XBee.write("\n");
     }
     if(getValue(message, ' ', 0) == "set_pass" && getValue(message, ' ' , 1) == String(id) && getValue(message, ' ', 2) == pass) {
-      Serial.println("I run");
-      Serial.println(getValue(message, ' ', 3));
       write(getValue(message, ' ', 3), 0);
       pass = getValue(message, ' ', 3);
     }
