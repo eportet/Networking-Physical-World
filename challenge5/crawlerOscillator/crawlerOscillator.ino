@@ -14,12 +14,14 @@ void setup()
   /*  If you're re-uploading code via USB while leaving the ESC powered on,
    *  you don't need to re-calibrate each time, and you can comment this part out.
    */
-  //calibrateESC();
 
   pinMode(13, OUTPUT); //Right Trig
   pinMode(12, INPUT); //Right Echo
   pinMode(10, OUTPUT); //Left Trig
   pinMode(11, INPUT); //Left Echo
+  pinMode(19, INPUT);
+
+  calibrateESC();
   Serial.begin(9600);
   
 }
@@ -75,19 +77,57 @@ float distance(int trig, int echo) {
   return duration / 29.1 / 2 ;
 }
 
+float irDist() {
+  return analogRead(19);
+}
 
+boolean off = false;
+const float turn_constant = 45;
 
 void loop()
 {
+  if(off) {
+    delay(1000);
+    esc.write(90);
+    return;
+  }
+  float frontDistance = irDist();
+  if(irDist() > 310.0) {
+    Serial.println("STOPPED");
+    esc.write(90);
+    off = true;
+  }
+  else { //doStuff
+    esc.write(60);
+    float right = distance(13,12);
+    float left = distance(10,11);
+    float delta = left - right;
 
-  
-  //esc.write(90);
-   //delay(4000);
-   //esc.write(90);
-   //oscillate();
-   Serial.println("RIGHT");
-   Serial.println(distance(13,12));
-   Serial.println("LEFT");
-   Serial.println(distance(10,11));
-   delay(1000);
+    if(delta * delta > 400) {
+      float timeToTurn = 0;
+      float ratio = 0;
+      if(left > right) {
+        float adj = left / right;
+        if(adj > 2)
+          adj = 2;
+        ratio = (adj - 1) * turn_constant;
+        ratio *= -1;
+      }
+      else {
+        float adj = right / left;
+        if(adj > 2)
+          adj = 2;
+        ratio = (adj - 1) * turn_constant;
+      }
+      wheels.write(90 - ratio);
+      delay(500);
+      if(irDist() > 310.0) {
+        return;
+      }
+      delay(500);
+      wheels.write(90 + (ratio / 2.0));
+      delay(500);
+      wheels.write(90);
+    }
+  }
 }
