@@ -15,28 +15,47 @@ double maxWheelOffset = 85; // maximum wheel turn magnitude, in servo 'degrees'
 double setpoint, pid_input, pid_output;
 PID myPID(&pid_input, &pid_output, &setpoint, .5, .5, .5, 0); //P_ON_M specifies that Proportional on Measurement be used
                                                             //P_ON_E (Proportional on Error) is the default behavior
-SonarEZ0pw sonarLeft(5); // pin D7
-SonarEZ0pw sonarRight(6); // pin D7
+SonarEZ0pw sonarLeft(6); // pin D7
+SonarEZ0pw sonarRight(5); // pin D7
+
+float prev_left = -1;
+float prev_right = -1;
 
 void setup()
 {
+  Serial.begin(9600);
+  Serial.println("hi");
   wheels.attach(3); // initialize wheel servo to Digital IO Pin #8
   esc.attach(2); // initialize ESC to Digital IO Pin #9
-  myPID.SetMode(AUTOMATIC);
-  myPID.SetSampleTime(50);
+//  
+//  myPID.SetSampleTime(50);
   //myPID.SetOutputLimits(-45, 45);
   //myPID.SetControllerDirection(REVERSE);
-  setpoint = 100;
-  pinMode(13, OUTPUT); //Right Trig
-  pinMode(12, INPUT); //Right Echo
-  pinMode(10, OUTPUT); //Left Trig
-  pinMode(11, INPUT); //Left Echo
+  setpoint = 255;
   pinMode(19, INPUT);
-//  pinMode(A4, INPUT);
-//  pinMode(A1, INPUT);
+
+  Serial.println("Here");
+
+  int count = 0;
+  float s1 = 0;
+  float s2 = 0;
+  while(count < 2 * 20) {
+    Serial.println(count);
+    s1 += sonarLeft.Distance(cm);
+    s2 += sonarRight.Distance(cm);
+    count += 1;
+    Serial.println(count);
+  }
+
+  prev_left = s1 / 40;
+  prev_right = s2 / 40;
+  Serial.println(prev_left);
+  Serial.println(prev_right);
+  
   calibrateESC();
-  Serial.begin(9600);
   esc.write(55);
+
+  myPID.SetMode(AUTOMATIC);
 }
 
 /* Convert degree value to radians */
@@ -90,8 +109,6 @@ float getMedian(float a, float b, float c) {
 
 boolean off = false;
 const float turn_constant = 45;
-float prev_left = -1;
-float prev_right = -1;
 
 float lefts[3] =  {0,0,0};
 float rights[3] = {0,0,0};
@@ -124,13 +141,13 @@ void loop()
     float left = sonarLeft.Distance(cm);
     float right = sonarRight.Distance(cm);
 
-    if(prev_left < 0 || (left - prev_left) * (left - prev_left) < 20 * 20) {
+    if((left - prev_left) * (left - prev_left) < 12 * 12) {
       prev_left = left;
     } else {
       left = prev_left;
     }
 
-    if(prev_right < 0 || (right - prev_right) * (right - prev_right) < 20 * 20) {
+    if((right - prev_right) * (right - prev_right) < 12 * 12) {
       prev_right = right;
     } else {
       right = prev_right;
@@ -140,6 +157,7 @@ void loop()
       rights[i] = rights[i-1];
       lefts[i] = lefts[i-1];
     }
+    
     lefts[0] = left;
     rights[0] = right;
 
@@ -149,20 +167,26 @@ void loop()
     float delta = left - right;
     float mul = 1;
     if(delta < 0) {
-      //delta *= -1;
+      delta *= -1;
       mul = -1;
     }
+    
     if(delta > 100)
       delta = 100;
 
-    delta = 100 - delta;
+    delta = 255.0 * delta / 100.0;
+  
+    delta = 255 - delta;
     pid_input = delta;
     myPID.Compute();
+    
     Serial.println(String("left ") + String(left));
     Serial.println(String("right ") + String(right));
-    Serial.println(pid_output);
-    wheels.write(90 + pid_output / 255 * mul * 30);
+    Serial.println(String("PID Out ") + pid_output);
+    Serial.println(String("write ") + (90+pid_output / 255 * mul * 50));
+    Serial.println(String("---------------"));
+    wheels.write(90 + (pid_output / 255.0 * mul * 25));
     
-    delay(50);
+    delay(40);
   }
 }
