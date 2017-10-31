@@ -25,8 +25,8 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println("hi");
-  wheels.attach(3); // initialize wheel servo to Digital IO Pin #8
-  esc.attach(2); // initialize ESC to Digital IO Pin #9
+  wheels.attach(2); // initialize wheel servo to Digital IO Pin #8
+  esc.attach(3); // initialize ESC to Digital IO Pin #9
 //  
 //  myPID.SetSampleTime(50);
   //myPID.SetOutputLimits(-45, 45);
