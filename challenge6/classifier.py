@@ -54,7 +54,7 @@ def uploadLocation():
 	tar = request.args.get("data", "/")
 	for cc in tar.split("/")[1:]:
 		if cc.split("*")[0] in kk.index:
-			kk[cc.split("*")[0]] = int(cc.split("*")[1]) + random.randint(0,1 )-1
+			kk[cc.split("*")[0]] = int(cc.split("*")[1])
 	print(nn.predict([kk]))
 	return str(nn.predict([kk]))
 	# except:
