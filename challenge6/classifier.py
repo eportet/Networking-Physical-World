@@ -51,7 +51,7 @@ def uploadLocation():
 	#try:
 	kk = ll
 	#tar = "/F0:29:29:92:6B:54*-55/F0:29:29:92:6B:52*-56/F0:29:29:92:6B:51*-56/F0:29:29:92:6B:53*-56/F0:29:29:92:6B:50*-55/00:1E:E5:85:F7:72*-63/FA:8F:CA:36:EA:D6*-64/C0:56:27:3A:34:29*-69/00:25:9C:28:3D:EB*-60/00:21:29:8A:FC:F3*-61"
-	tar = request.args.get("data", "/")
+	tar = request.args.get("field1", "/")
 	for cc in tar.split("/")[1:]:
 		if cc.split("*")[0] in kk.index:
 			kk[cc.split("*")[0]] = int(cc.split("*")[1])
