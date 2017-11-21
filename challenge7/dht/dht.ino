@@ -163,46 +163,10 @@ void incrementId(int type) {
       sendPayload(payload, broadcast);
     }
   }
-  
-  
-  
-  /*
-  if(leader == 0 && type == 1) {
-    String payload = String("RESET");
-    sendPayload(payload, broadcast);
-    setupId(); // You have to reset as well since you dont get the message
-  } else {
-    Serial.println("    Adding 1");
-    if(successor_id == id && type == 1)
-        successor_id = (successor_id + 1) % 16;
-    if(predecessor_id == id  && type == 1)
-        predecessor_id = (predecessor_id + 1) % 16;
-    id = (id + 1) % 16;
-  
-    if(id <= successor_id) {
-      Serial.print("    Updating ");
-      Serial.println(id);
-      
-      XBeeAddress64 addr1 = XBeeAddress64(successor_address);
-      XBeeAddress64 addr2 = XBeeAddress64(predecessor_address);
-      String payload = String("UPDATE ") + String(id);
-      sendPayload(payload, addr1);
-      sendPayload(payload, addr2);
-    } else if(id == 0) {
-      XBeeAddress64 addr1 = XBeeAddress64(predecessor_address);
-      String payload = String("BYE");      
-      sendPayload(payload, addr1);
-      
-      uint32_t low = predecessor_address % 0xFFFFFFFF; 
-      uint32_t high = (predecessor_address >> 32) % 0xFFFFFFFF;
-      
-      payload = "IAM 0";
-      sendPayload(payload, broadcast);
-    }
-  }*/
 }
 
-int p_count = 0;
+long p_count = 0;
+long lf_count = 0;
 long startTime = 0;
 
 void loop() {
@@ -245,28 +209,33 @@ void loop() {
     }
   }
 
-  /*
   int timeout = 10000;
 
-  if(millis() - startTime > timeout && successor_id != id) {
+  if(millis() - startTime > 5000 && successor_id != id) {
     //Serial.println(startTime);
     //Serial.println(millis());
-    String payload = String("PING ");
+    Serial.println("PING");
+    String payload = String("PING");
     XBeeAddress64 addr1 = XBeeAddress64(successor_address);
     sendPayload(payload, addr1);
     startTime = millis();
   }
-
-  if(p_count == 0) {
-    p_count = millis();
-  }
-
-  if(millis() - p_count > timeout && leader == 0) {
+  if (millis() - p_count > timeout && p_count != 0 && leader == 0) {
+      Serial.println("LFING");
       String payload = String("LF ") + String(predecessor_id);
       sendPayload(payload, broadcast);
+      lf_count = millis();
+      p_count = 0;
+  } 
+  
+  if (millis() - lf_count > timeout && lf_count != 0) {
+      Serial.println("IM LEADER NOW");
+      leader = 1;
       predecessor_id = id;
       p_count = millis();
-  }*/
+      lf_count = 0;
+  }
+  
     
   if(predecessor_id == id)
     leader = 1;
@@ -301,7 +270,11 @@ void handleLF(String data, uint64_t address) {
 
 void handlePing(String data, uint64_t address) {
   if(address == predecessor_address)
+    Serial.println("ACK PING");
     p_count = millis();
+    XBeeAddress64 xbee_targ = XBeeAddress64(address);
+    String payload = String("IM S ") + String(id);
+    sendPayload(payload, xbee_targ);
 }
 
 void handleBye(String data, uint64_t address) {
@@ -313,9 +286,11 @@ void handleIM(String data, uint64_t address) {
   uint64_t target_address = address;
   int new_id = getValue(data, 2).toInt();
   if(type == "P") {
+    lf_count = 0;
     predecessor_id = new_id;
     predecessor_address = target_address;
   } else if(type == "S") {
+    p_count = millis();
     successor_id = new_id;
     successor_address = target_address;
   } else {
@@ -367,42 +342,6 @@ void handleIAM(String data, uint64_t address) {
      // dont change anything
   }
   sendPayload(payload, xbee_targ);
-  
-  /*if(id == successor_id) {
-    Serial.println("    IM MY OWN SUCCESSOR");
-    if(new_id > id) { // we get a new successor / become predecesor
-      successor_id = new_id;
-      successor_address = target_address;
-      Serial.print("        newid > id IM P ");
-      Serial.println(id);
-      payload = String("IM P ") + String(id);
-    } else if(new_id < id) {
-      Serial.print("        newid < id IM P ");
-      predecessor_id = new_id;
-      predecessor_address = target_address;
-      payload = String("IM S ") + String(id);
-    }
-    sendPayload(payload, xbee_targ);
-  } else if(new_id > id && new_id <= successor_id) { //have new successor
-      successor_id = new_id;
-      successor_address = target_address;
-      String payload = String("IM P ") + String(id);
-      sendPayload(payload, xbee_targ);
-   } else if((new_id > predecessor_id || predecessor_id == id) && new_id < id) { // new predecessor
-      predecessor_id = new_id;
-      predecessor_address = target_address;
-      String payload = String("IM S ") + String(id);
-      sendPayload(payload, xbee_targ);
-   } else { //stole my identity (new predecessor / im the successor change my id)
-      
-      incrementId(0);
-
-      predecessor_id = new_id;
-      predecessor_address = target_address;
-      String payload = String("IM S ") + String(id);
-      
-      sendPayload(payload, xbee_targ);
-   }*/
 }
 
 void sendPayload(String payload, XBeeAddress64 target) {
@@ -420,7 +359,6 @@ struct Packet getDHTPacket() {
       // now fill our zb rx class
       xbee.getResponse().getZBRxResponse(rx);            
       if (rx.getOption() == ZB_PACKET_ACKNOWLEDGED) { // the sender got an ACK
-        Serial.println("    ACK");
       } else {
         //Serial.println("packet not acknowledged");
       }
