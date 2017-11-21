@@ -11,7 +11,7 @@ ZBRxResponse rx = ZBRxResponse();
 int id_pins[] = {4,5,6,7};
 int num_pins = 4;
 
-int leader = 0;
+int leader = 1;
 
 int ALIVE = 0;
 
@@ -31,9 +31,6 @@ int successor_id = 0;
 
 uint64_t successor_address = 0;
 uint64_t predecessor_address = 0;
-
-int s_count = 0;
-int p_count = 0;
 
 String getValue(String data, int index)
 {
@@ -77,12 +74,9 @@ void setup() {
 }
 
 void setupId() {
-  if(leader == 0)
-    id = random(15);
-  else
-    id = 15;
+  id = random(15);
 
-  Serial.println(String("id ") + id);
+  Serial.println(String("IAM ") + id);
   
   predecessor_id = id;
   successor_id = id;
@@ -116,14 +110,69 @@ void displayAndHandleInput() {
 }
 
 void incrementId(int type) {
-
+  Serial.println("INCREMENTID");
+  XBeeAddress64 addr1 = XBeeAddress64(successor_address);
+  XBeeAddress64 addr2 = XBeeAddress64(predecessor_address);
+  String payload;
+  if (type == 1) {
+    Serial.println("    BUTTON PRESSED");
+    
+    if (leader == 1 && successor_id != id) { // Leaders don't have predecessors
+      if (id != 14) {
+        id = (id + 1) % 16;
+        Serial.print("       +1 leader ");
+        Serial.println(id);
+        predecessor_id = id;
+        // Tell S that I incremented
+        payload = String("UPDATE ") + String(id);
+        sendPayload(payload, addr1);
+      } else {
+        id = 15;
+        successor_id = id;
+        payload = String("UPDATE ") + String(id);
+        sendPayload(payload, addr1);
+        payload = String("IAM ") + String(id);
+        sendPayload(payload, broadcast);
+      }
+      
+    } else if (leader == 1 && successor_id == id) {
+      id = (id + 1) % 16;
+      Serial.print("    Only one device ");
+      Serial.println(id);
+      predecessor_id = id;
+      successor_id = id;
+    
+    } else if (leader == 0) { // Everyone rand id
+      Serial.println("    RESET");
+      payload = String("RESET");
+      sendPayload(payload, broadcast);
+      setupId(); // You have to reset as well since you dont get the message
+    }
+  } else { // My id was stolen
+    Serial.println("    STOLEN ID");
+    if (id != 15) {
+      id = (id + 1) % 16;
+      payload = String("UPDATE ") + String(id);
+      sendPayload(payload, addr1);
+      sendPayload(payload, addr2);
+    } else {
+      id = 0;
+      leader = 0;
+      predecessor_id = id;
+      payload = String("IAM ") + String(id);
+      sendPayload(payload, broadcast);
+    }
+  }
+  
+  
+  
+  /*
   if(leader == 0 && type == 1) {
     String payload = String("RESET");
     sendPayload(payload, broadcast);
-    setupId();
-  }
-  else {
-    Serial.println("Adding 1");
+    setupId(); // You have to reset as well since you dont get the message
+  } else {
+    Serial.println("    Adding 1");
     if(successor_id == id && type == 1)
         successor_id = (successor_id + 1) % 16;
     if(predecessor_id == id  && type == 1)
@@ -131,7 +180,7 @@ void incrementId(int type) {
     id = (id + 1) % 16;
   
     if(id <= successor_id) {
-      Serial.println("Updating");
+      Serial.print("    Updating ");
       Serial.println(id);
       
       XBeeAddress64 addr1 = XBeeAddress64(successor_address);
@@ -150,10 +199,10 @@ void incrementId(int type) {
       payload = "IAM 0";
       sendPayload(payload, broadcast);
     }
-  }
+  }*/
 }
 
-int count = 0;
+int p_count = 0;
 long startTime = 0;
 
 void loop() {
@@ -164,7 +213,7 @@ void loop() {
     Packet message = getDHTPacket();
     if(message.data.length() == 0)
       break;
-    uint32_t low = message.address % 0xFFFFFFFF; 
+    uint32_t low = message.address % 0xFFFFFFFF;
     uint32_t high = (message.address >> 32) % 0xFFFFFFFF;
     Serial.print("Got \'");
     Serial.print(message.data);
@@ -175,8 +224,12 @@ void loop() {
 
     String opcode = getValue(message.data, 0);
     if(opcode == "RESET") {
-      delay(id * 30);
-      setupId();
+      if (leader == 1) {
+        id = 15;
+      } else {
+        delay(id * 30);
+        setupId(); 
+      }
     } else if(opcode == "IAM") {
       handleIAM(message.data, message.address);
     } else if(opcode == "IM") {
@@ -192,14 +245,15 @@ void loop() {
     }
   }
 
-  int timeout = 100000;
+  /*
+  int timeout = 10000;
 
-  if(millis() - startTime > 4000 && successor_id != id) {
-    Serial.println(startTime);
-    Serial.println(millis());
+  if(millis() - startTime > timeout && successor_id != id) {
+    //Serial.println(startTime);
+    //Serial.println(millis());
     String payload = String("PING ");
-    sendPayload(payload, broadcast);
     XBeeAddress64 addr1 = XBeeAddress64(successor_address);
+    sendPayload(payload, addr1);
     startTime = millis();
   }
 
@@ -207,19 +261,17 @@ void loop() {
     p_count = millis();
   }
 
-  if(millis() - p_count > 10000 && leader == 0) {
+  if(millis() - p_count > timeout && leader == 0) {
       String payload = String("LF ") + String(predecessor_id);
       sendPayload(payload, broadcast);
       predecessor_id = id;
       p_count = millis();
-  }
+  }*/
     
   if(predecessor_id == id)
     leader = 1;
   else
     leader = 0;
-
-  count += 1;
 }
 
 void handleUpdate(String data, uint64_t address) {
@@ -275,35 +327,60 @@ void handleIM(String data, uint64_t address) {
 }
 
 void handleIAM(String data, uint64_t address) {
-  Serial.println("IAMMING");
+  Serial.print("IAMMING ");
   int new_id = getValue(data, 1).toInt();
-  Serial.print("    evaluating ");
   Serial.print(new_id);
-  Serial.print("   to ");
-  Serial.print(id);
-  Serial.print("\n");
+  Serial.print(" into ");
+  Serial.println(id);
+  
   uint64_t target_address = address;
   uint32_t low = address % 0xFFFFFFFF; 
   uint32_t high = (address >> 32) % 0xFFFFFFFF;
   XBeeAddress64 xbee_targ = XBeeAddress64(address);
-  
-  if(id == successor_id) {
-    String payload;
-    Serial.print("    id == S");
-    if(new_id > id) {
+  String payload;
+
+  if (new_id == id) { // stolen id
+    Serial.print("    STOLEN ID");
+    incrementId(0);
+    Serial.print("    YOU ARE P");
+    Serial.print("    I AM S");
+    predecessor_id = new_id;
+    predecessor_address = target_address;
+    payload = String("IM S ") + String(id);
+  } else if (new_id > id) { // potential successor
+    if (new_id <= successor_id || id == successor_id) { // change successor
+      Serial.println("    YOU ARE S");
+      Serial.println("    IM P");
       successor_id = new_id;
       successor_address = target_address;
-      Serial.print("\n");
-      Serial.print("    P ");
-      Serial.print(high, HEX);
-      Serial.print(low, HEX);
+      payload = String("IM P ") + String(id);
+    }
+    // dont change anything
+  } else if (new_id < id) { // potential predecessor
+    if (new_id >= predecessor_id || id == predecessor_id) { // change predecessor
+       Serial.println("    YOU ARE P");
+       Serial.println("    IM S");
+       predecessor_id = new_id;
+       predecessor_address = target_address;
+       payload = String("IM S ") + String(id);
+     }
+     // dont change anything
+  }
+  sendPayload(payload, xbee_targ);
+  
+  /*if(id == successor_id) {
+    Serial.println("    IM MY OWN SUCCESSOR");
+    if(new_id > id) { // we get a new successor / become predecesor
+      successor_id = new_id;
+      successor_address = target_address;
+      Serial.print("        newid > id IM P ");
+      Serial.println(id);
       payload = String("IM P ") + String(id);
     } else if(new_id < id) {
+      Serial.print("        newid < id IM P ");
       predecessor_id = new_id;
       predecessor_address = target_address;
       payload = String("IM S ") + String(id);
-    } else {
-      
     }
     sendPayload(payload, xbee_targ);
   } else if(new_id > id && new_id <= successor_id) { //have new successor
@@ -325,7 +402,7 @@ void handleIAM(String data, uint64_t address) {
       String payload = String("IM S ") + String(id);
       
       sendPayload(payload, xbee_targ);
-   }
+   }*/
 }
 
 void sendPayload(String payload, XBeeAddress64 target) {
@@ -337,20 +414,18 @@ void sendPayload(String payload, XBeeAddress64 target) {
 
 struct Packet getDHTPacket() {
   Packet resp;
-  resp.data = "";
   xbee.readPacket();
   if (xbee.getResponse().isAvailable()) { // got something     
     if (xbee.getResponse().getApiId() == ZB_RX_RESPONSE) { // got a zb rx packet
       // now fill our zb rx class
       xbee.getResponse().getZBRxResponse(rx);            
       if (rx.getOption() == ZB_PACKET_ACKNOWLEDGED) { // the sender got an ACK
-        Serial.println("packet acknowledged");
+        Serial.println("    ACK");
       } else {
-        Serial.println("packet not acknowledged");
+        //Serial.println("packet not acknowledged");
       }
   
       resp.data = "";
-  
       for (int i = 0; i < rx.getDataLength(); i++) {
         resp.data += char(rx.getData()[i]);
       }
