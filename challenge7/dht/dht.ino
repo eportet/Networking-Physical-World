@@ -13,8 +13,6 @@ int num_pins = 4;
 
 int leader = 1;
 
-int ALIVE = 0;
-
 int leader_pin = 9;
 int non_leader_pin = 8;
 
@@ -23,14 +21,138 @@ int input = 11;
 int prev_button = 0;
 
 int AO = 0;
-int id = -1;
 XBeeAddress64 broadcast = XBeeAddress64(0x00000000, 0x0000FFFF);
 
-int predecessor_id = 0;
-int successor_id = 0;
 
-uint64_t successor_address = 0;
+int id = -1;
+int predecessor_id = 0;
 uint64_t predecessor_address = 0;
+int successor_id = 0;
+uint64_t successor_address = 0;
+
+struct Packet {
+  String data;
+  uint64_t address;
+};
+
+void setup() {
+  // put your setup code here, to run once:
+  sSer.begin(9600);
+  Serial.begin(9600);
+  xbee.setSerial(sSer);
+  randomSeed(analogRead(0));
+
+  for(int i = 0; i < num_pins; i++) {
+    pinMode(id_pins[i], OUTPUT);
+  }
+  pinMode(leader_pin, OUTPUT);
+  pinMode(non_leader_pin, OUTPUT);
+  pinMode(input, INPUT);
+
+  setupId();   
+}
+
+long startTime = 0;
+long p_sent = 0;
+long p_received = 0;
+long lp_received = 0;
+long lonely_time = 0;
+
+void loop() {
+  
+  displayAndHandleInput();
+
+  while(true) {
+    Packet message = getDHTPacket();
+    if(message.data.length() == 0)
+      break;
+    uint32_t low = message.address % 0xFFFFFFFF;
+    uint32_t high = (message.address >> 32) % 0xFFFFFFFF;
+    Serial.print("Got \'");
+    Serial.print(message.data);
+    Serial.print("\' from ");
+    Serial.print(high, HEX);
+    Serial.print(low, HEX); 
+    Serial.print("\n");
+
+    String opcode = getValue(message.data, 0);
+    if(opcode == "RESET") {
+      if (leader == 1) {
+        id = 15;
+      } else {
+        delay(id * 30);
+        setupId(); 
+      }
+    } else if(opcode == "IAM") {
+      handleIAM(message.data, message.address);
+    } else if(opcode == "IM") {
+      handleIM(message.data, message.address);
+    } else if(opcode == "BYE") {
+      handleBye(message.data, message.address);
+    } else if(opcode == "LF") {
+      handleLF(message.data, message.address);
+    } else if(opcode == "PING") {
+      handlePing(message.data, message.address);
+    } else if(opcode == "UPDATE") {
+      handleUpdate(message.data, message.address);
+    }
+  }
+
+  int timeout = 5000;
+
+  if(millis() - startTime > 2500 && successor_id != id && p_sent == 0) { //send ping
+    Serial.println("PING");
+    String payload = String("PING");
+    XBeeAddress64 addr1 = XBeeAddress64(successor_address);
+    sendPayload(payload, addr1);
+    startTime = millis();
+    p_sent = 1;
+    p_received = 0;
+  }
+
+  else if(p_sent == 1 && p_received == 0 && millis() - startTime > timeout) { // if we have sent a ping and havent received an acknowledgment of the ping
+    Serial.println("LOOKING FOR " + String(successor_id));
+    String payload = String("LF ") + String(successor_id);
+    sendPayload(payload, broadcast);
+    Serial.println("IAM " + String(id));
+    successor_id = id;
+    predecessor_id = id;
+    payload = String("IAM ") + String(id);
+    sendPayload(payload, broadcast);
+    p_sent = 0;
+    p_received = 0;
+  } else if(millis() - lp_received > timeout && lp_received != 0) { // if we have not received a ping in a while from our predecessor
+    Serial.println("LOOKING FOR " + String(predecessor_id));
+    String payload = String("LF ") + String(predecessor_id);
+    sendPayload(payload, broadcast);
+    Serial.println("IAM " + String(id));
+    successor_id = id;
+    predecessor_id = id;
+    payload = String("IAM ") + String(id);
+    sendPayload(payload, broadcast);
+    p_sent = 0;
+    p_received = 0;
+    lp_received = 0;
+  }
+
+  if (successor_id == id && predecessor_id == id) {
+    if (lonely_time == 0) {
+      Serial.println("Im lonely");
+      lonely_time = millis();
+    } else if(millis() - lonely_time > timeout){
+      Serial.println("I'll look for friends");
+      String payload = String("IAM ") + String(id);
+      sendPayload(payload,broadcast);
+      lonely_time = 0;
+    }
+  }
+  
+    
+  if(predecessor_id == id)
+    leader = 1;
+  else
+    leader = 0;
+}
 
 String getValue(String data, int index)
 {
@@ -47,30 +169,6 @@ String getValue(String data, int index)
   }
 
   return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
-
-struct Packet {
-  String data;
-  uint64_t address;
-};
-
-
-void setup() {
-  // put your setup code here, to run once:
-  sSer.begin(9600);
-  Serial.begin(9600);
-  xbee.setSerial(sSer);
-  randomSeed(analogRead(0));
-
-  for(int i = 0; i < num_pins; i++) {
-    pinMode(id_pins[i], OUTPUT);
-  }
-  pinMode(leader_pin, OUTPUT);
-  pinMode(non_leader_pin, OUTPUT);
-  pinMode(input, INPUT);
-
-  setupId();
-   
 }
 
 void setupId() {
@@ -158,89 +256,11 @@ void incrementId(int type) {
     } else {
       id = 0;
       leader = 0;
-      predecessor_id = id;
+      //predecessor_id = id;
       payload = String("IAM ") + String(id);
       sendPayload(payload, broadcast);
     }
   }
-}
-
-long p_count = 0;
-long lf_count = 0;
-long startTime = 0;
-
-void loop() {
-  
-  displayAndHandleInput();
-
-  while(true) {
-    Packet message = getDHTPacket();
-    if(message.data.length() == 0)
-      break;
-    uint32_t low = message.address % 0xFFFFFFFF;
-    uint32_t high = (message.address >> 32) % 0xFFFFFFFF;
-    Serial.print("Got \'");
-    Serial.print(message.data);
-    Serial.print("\' from ");
-    Serial.print(high, HEX);
-    Serial.print(low, HEX); 
-    Serial.print("\n");
-
-    String opcode = getValue(message.data, 0);
-    if(opcode == "RESET") {
-      if (leader == 1) {
-        id = 15;
-      } else {
-        delay(id * 30);
-        setupId(); 
-      }
-    } else if(opcode == "IAM") {
-      handleIAM(message.data, message.address);
-    } else if(opcode == "IM") {
-      handleIM(message.data, message.address);
-    } else if(opcode == "BYE") {
-      handleBye(message.data, message.address);
-    } else if(opcode == "LF") {
-      handleLF(message.data, message.address);
-    } else if(opcode == "PING") {
-      handlePing(message.data, message.address);
-    } else if(opcode == "UPDATE") {
-      handleUpdate(message.data, message.address);
-    }
-  }
-
-  int timeout = 10000;
-
-  if(millis() - startTime > 5000 && successor_id != id) {
-    //Serial.println(startTime);
-    //Serial.println(millis());
-    Serial.println("PING");
-    String payload = String("PING");
-    XBeeAddress64 addr1 = XBeeAddress64(successor_address);
-    sendPayload(payload, addr1);
-    startTime = millis();
-  }
-  if (millis() - p_count > timeout && p_count != 0 && leader == 0) {
-      Serial.println("LFING");
-      String payload = String("LF ") + String(predecessor_id);
-      sendPayload(payload, broadcast);
-      lf_count = millis();
-      p_count = 0;
-  } 
-  
-  if (millis() - lf_count > timeout && lf_count != 0) {
-      Serial.println("IM LEADER NOW");
-      leader = 1;
-      predecessor_id = id;
-      p_count = millis();
-      lf_count = 0;
-  }
-  
-    
-  if(predecessor_id == id)
-    leader = 1;
-  else
-    leader = 0;
 }
 
 void handleUpdate(String data, uint64_t address) {
@@ -258,23 +278,20 @@ void handleUpdate(String data, uint64_t address) {
 
 void handleLF(String data, uint64_t address) {
   int old_id = getValue(data, 1).toInt();
-  if(old_id == successor_id) {
-    successor_id = getValue(data, 2).toInt();
-    successor_address = address;
-
+  if(old_id == predecessor_id || old_id == successor_id) {
     XBeeAddress64 xbee_targ = XBeeAddress64(address);
-    String payload = String("IM P ") + String(id);
+    String payload = String("IAM ") + String(id);
     sendPayload(payload, xbee_targ);
   }
 }
 
 void handlePing(String data, uint64_t address) {
-  if(address == predecessor_address)
-    Serial.println("ACK PING");
-    p_count = millis();
+  if(address == predecessor_address) {
+    lp_received = millis();
     XBeeAddress64 xbee_targ = XBeeAddress64(address);
     String payload = String("IM S ") + String(id);
     sendPayload(payload, xbee_targ);
+  }
 }
 
 void handleBye(String data, uint64_t address) {
@@ -286,11 +303,11 @@ void handleIM(String data, uint64_t address) {
   uint64_t target_address = address;
   int new_id = getValue(data, 2).toInt();
   if(type == "P") {
-    lf_count = 0;
     predecessor_id = new_id;
     predecessor_address = target_address;
   } else if(type == "S") {
-    p_count = millis();
+    p_received = 1;
+    p_sent = 0;
     successor_id = new_id;
     successor_address = target_address;
   } else {
