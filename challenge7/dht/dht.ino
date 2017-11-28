@@ -220,7 +220,7 @@ void incrementId(int type) {
         id = (id + 1) % 16;
         Serial.print("       +1 leader ");
         Serial.println(id);
-        predecessor_id = id;
+        predecessor_id = id; //TODO
         // Tell S that I incremented
         payload = String("UPDATE ") + String(id);
         sendPayload(payload, addr1);
@@ -255,7 +255,7 @@ void incrementId(int type) {
       sendPayload(payload, addr2);
     } else {
       id = 0;
-      leader = 0;
+      // leader = 0;
       //predecessor_id = id;
       payload = String("IAM ") + String(id);
       sendPayload(payload, broadcast);
