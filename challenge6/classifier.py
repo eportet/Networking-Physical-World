@@ -1,3 +1,4 @@
+
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier as KNN
 import random
@@ -120,4 +121,3 @@ def uploadLocation():
 	# except:
 	# 	return "Badddd"
 app.run(host='0.0.0.0', use_reloader=False, threaded=True, port=5001)
-
