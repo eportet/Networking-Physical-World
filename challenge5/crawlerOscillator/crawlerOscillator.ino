@@ -1,3 +1,5 @@
+#include <MedianFilter.h>
+
 #include <SonarEZ0pw.h>
 
 #include "Arduino.h"
@@ -22,6 +24,9 @@ float prev_left = -1;
 float prev_right = -1;
 float orig = 0;
 
+MedianFilter left(15, 0);
+MedianFilter right(15, 0);
+
 void setup()
 {
   Serial.begin(9600);
@@ -42,7 +47,7 @@ void setup()
   float s2 = 0;
   while(count < 2 * 20) {
     Serial.println(count);
-    s1 += sonarLeft.Distance(cm);
+    s1 += 
     s2 += sonarRight.Distance(cm);
     count += 1;
     Serial.println(count);
@@ -81,6 +86,18 @@ void calibrateESC(){
     esc.write(90); // reset the ESC to neutral (non-moving) value
 }
 
+void turn() {
+  esc.write(90);
+  wheels.write(175);
+  delay(600);
+  esc.write(60);
+  delay(2150);
+  esc.write(90);
+  wheels.write(90);
+  delay(500);
+  esc.write(55);
+}
+
 float distance(int trig, int echo) {
   long duration, distanceCm, distanceIn;
  
@@ -115,9 +132,48 @@ const float turn_constant = 45;
 float lefts[3] =  {0,0,0};
 float rights[3] = {0,0,0};
 
+boolean autonomous = true;
+int Aspeeed = 90;
+int Adir= 90;
 
 void loop()
 {
+  String message = "";
+  while(Serial.available() > 0) {
+            // read the incoming byte:
+            message += char(Serial.read());
+    }
+  if(message.length() > 0) {
+    if(message == "32") {
+      autonomous = !autonomous;
+      Aspeed = 90;
+      Adir = 90;
+    }
+    if(message == "97" && Adir >= 120)//left
+       Adir -= 5;
+    if(message == "100" && Adir <= 170)//right
+      Adir += 5;
+    if(message == "119" && Aspeed > 55)//up
+      Aspeed -= 5;
+    if(meessage == "115" && Aspeed < 135)//down
+      Aspeed += 5;
+
+    
+  }
+        
+  Serial.print("RIGHT : ");
+  for(int i = 0; i < 3; i++) {
+    right.in(sonarRight.Distance(cm));
+  }
+  Serial.println(right.out());
+  Serial.print("LEFT : ");
+  for(int i = 0; i < 3; i++) {
+    left.in(sonarLeft.Distance(cm));
+  }
+  Serial.println(sonarLeft.Distance(cm));
+  return;
+  turn();
+  return;
   if(off) {
     delay(1000);
     esc.write(90);
@@ -128,6 +184,21 @@ void loop()
     Serial.println("STOPPED");
     esc.write(90);
     off = true;
+  }
+  else if(autonomous) {
+    esc.write(Aspeed);
+    wheels.write(Adir);
+
+    if(Aspeed > 90)
+      Aspeed -= 1;
+    if(Aspeed < 90)
+      Aspeed += 1;
+
+    if(Adir > 90)
+      Adir -= 1;
+
+    if(Adir < 90)
+      Adir += 1;
   }
   else { //doStuff
    // float reads[3] = {0,0,0};
