@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Crawler Localization</title>
+<head>
+	<title>Crawler Localization</title>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
@@ -10,149 +10,138 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.6/nv.d3.css">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <style>
-    </style>
-  </head>
-  <body>
-    <div>
-		<nav class="navbar navbar-default">
-			<div class="navbar-header" style="margin-left: 20px; color: steelblue;">
-				<h2>Indoor Location Tracker</h2>
+	<style>
+</style>
+</head>
+<body>
+	<div>
+	<nav class="navbar navbar-default">
+		<div class="navbar-header" style="margin-left: 20px; color: steelblue;">
+			<h2>Indoor Location Tracker</h2>
+		</div>
+	</nav>
+	<div class="container-fluid">
+		<div class="panel panel-default">
+			<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
+				Crawler Controller
 			</div>
-		</nav>
-		<div class="container-fluid">
-			<div class="panel panel-default">
-				<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
-					Crawler Controller
-				</div>
-				<div class="panel-body" style="text-align: center">
-					<img style="-webkit-user-select: none;" src="http://192.168.1.126:8080/?action=stream" width="493" height="370">
-				</div>
-				<div class="panel-body" style="text-align: center">
-					<button class="btn btn-primary" on-click="start('forward')"><i style="font-size:24px" class="fa">&#xf062;</i></button>
-					<button class="btn btn-primary" on-click="start('left')"><i style="font-size:24px" class="fa">&#xf060;</i></button>
-					<button class="btn btn-primary" on-click="start('pause')"><i style="font-size:24px" class="fa">&#xf04c;</i></button>
-					<button class="btn btn-primary" on-click="start('right')"><i style="font-size:24px" class="fa">&#xf061;</i></button>
-					<button class="btn btn-primary" on-click="start('backward')"><i style="font-size:24px" class="fa">&#xf063;</i></button>
-				</div>
+			<div class="panel-body" style="text-align: center">
+				<img style="-webkit-user-select: none;" src="http://192.168.1.126:8080/?action=stream" width="493" height="370">
 			</div>
-			<div class="panel panel-default">
-				<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
-					Photonics 4th Floor
-				</div>
-				<div class="panel-body" style="text-align: center">
-					<canvas id="cd" width="800px" height="400px"></canvas>
-					<h4 id="error"> Error: </h4>
-				</div>
+			<div class="panel-body" style="text-align: center">
+				<button class="btn btn-primary" onclick="runCommand(119)"><i style="font-size:24px" class="fa">&#xf062;</i></button>
+				<button class="btn btn-primary" onclick="runCommand(97)"><i style="font-size:24px" class="fa">&#xf060;</i></button>
+				<button class="btn btn-primary" onclick="runCommand(32)"><i style="font-size:24px" class="fa">&#xf04c;</i></button>
+				<button class="btn btn-primary" onclick="runCommand(100)"><i style="font-size:24px" class="fa">&#xf061;</i></button>
+				<button class="btn btn-primary" onclick="runCommand(115)"><i style="font-size:24px" class="fa">&#xf063;</i></button>
+			</div>
+		</div>
+		<div class="panel panel-default">
+			<div class="panel-heading" style='font-family="Open Sans", sans-serif; font-weight: 900;'>
+				Photonics 4th Floor
+			</div>
+			<div class="panel-body" style="text-align: center">
+				<canvas id="cd" width="800px" height="400px"></canvas>
+				<h4 id="error"> Error: </h4>
 			</div>
 		</div>
 	</div>
-<style>
-
-</style>
-<script>
-function start(operation) {
-
-	document.getElementById("uptime").innerHTML = "Waiting for data...";
-	var deviceID = "2a003d001747353236343033";
-	var accessToken = "23ae28e2b7b339930767bbc2b9ddc4b8ab5f01a5";
-	var eventSource = new EventSource("https://api.spark.io/v1/devices/" + deviceID + "/events/?access_token=" + accessToken);
-
-	eventSource.addEventListener('open', function(e) {
-		console.log("Opened!"); },false);
-
-	eventSource.addEventListener('error', function(e) {
-		console.log("Errored!"); },false);
-
-	eventSource.addEventListener('Uptime', function(e) {
-		var parsedData = JSON.parse(e.data);
-		var tempSpan = document.getElementById("uptime");
-		var tsSpan   = document.getElementById("tstamp");
-		tempSpan.innerHTML = "Core: " + parsedData.coreid + " uptime: " + parsedData.data + " (h:m:s)";
-		tempSpan.style.fontSize = "28px";
-		tsSpan.innerHTML = "At timestamp " + parsedData.published_at;
-		tsSpan.style.fontSize = "9px";
-	}, false);
-}
-
-function getLoc() {
-	$.ajax({
-		type: "GET",
-		url: "/loc",
-		data: {},
-		dataType: 'text',
-		success: function(result) {
-			console.log(result);
-			var x = result.substring(0, result.indexOf(","))
-			var y = result.substring(result.indexOf(",") + 1)
-			drawLoc([x, y])
+	</div>
+	<script>
+		$(document).keypress(function(e){
+			keys= [115,119,100,97,32]
+		    if(keys.indexOf(e.which) > -1) {
+		    	console.log(e.which);
+		    	runCommand(e.which);
+		    }
+		});
+		function runCommand(op) {
+			$.ajax({
+				type: "POST",
+				url: "/command",
+				data: {"op": op},
+				dataType: 'text',
+			});
 		}
-	});
-}
 
-function getError() {
-	$.ajax({
-		type: "GET",
-		url: "/error",
-		data: {},
-		dataType: 'text',
-		success: function(result) {
-			console.log("Error")
-			$("#error").text("Probability that this location is correct: " + result)
+		function getLoc() {
+			$.ajax({
+				type: "GET",
+				url: "/loc",
+				data: {},
+				dataType: 'text',
+				success: function(result) {
+					console.log(result);
+					var x = result.substring(0, result.indexOf(","))
+					var y = result.substring(result.indexOf(",") + 1)
+					drawLoc([x, y])
+				}
+			});
 		}
-	});
-}
 
-function drawLoc(loc) {
-	var canvas = document.getElementById("cd");
-	var ctx = canvas.getContext("2d");
-	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(0,0,800,400);
-	ctx.fillStyle = "#FF0000";
-	ctx.strokeRect(0,0,800,400);
-	ctx.beginPath()
-	ctx.moveTo(50,50)
-	ctx.lineTo(50, 350);
-	ctx.lineTo(250, 350);
-	ctx.lineTo(250, 240);
-	ctx.lineTo(210, 240);
-	ctx.lineTo(210, 160);
-	ctx.lineTo(250,160);
-	ctx.lineTo(250,50);
-	ctx.lineTo(50,50);
-	ctx.stroke();
+		function getError() {
+			$.ajax({
+				type: "GET",
+				url: "/error",
+				data: {},
+				dataType: 'text',
+				success: function(result) {
+					console.log("Error")
+					$("#error").text("Probability that this location is correct: " + result)
+				}
+			});
+		}
 
-	ctx.beginPath()
-	ctx.moveTo(300,50)
-	ctx.lineTo(300, 350);
-	ctx.lineTo(450, 350);
-	ctx.lineTo(450, 50);
-	ctx.lineTo(300, 50);
-	ctx.stroke();
+		function drawLoc(loc) {
+			var canvas = document.getElementById("cd");
+			var ctx = canvas.getContext("2d");
+			ctx.fillStyle = "#FFFFFF";
+			ctx.fillRect(0,0,800,400);
+			ctx.fillStyle = "#FF0000";
+			ctx.strokeRect(0,0,800,400);
+			ctx.beginPath()
+			ctx.moveTo(50,50)
+			ctx.lineTo(50, 350);
+			ctx.lineTo(250, 350);
+			ctx.lineTo(250, 240);
+			ctx.lineTo(210, 240);
+			ctx.lineTo(210, 160);
+			ctx.lineTo(250,160);
+			ctx.lineTo(250,50);
+			ctx.lineTo(50,50);
+			ctx.stroke();
 
-	ctx.beginPath()
-	ctx.moveTo(500,50);
-	ctx.lineTo(750, 50);
-	ctx.lineTo(750, 350);
-	ctx.lineTo(500, 350);
-	ctx.lineTo(500, 250);
-	ctx.lineTo(580, 250);
-	ctx.lineTo(580, 150);
-	ctx.lineTo(500, 150);
-	ctx.lineTo(500, 50);
-	ctx.stroke();
+			ctx.beginPath()
+			ctx.moveTo(300,50)
+			ctx.lineTo(300, 350);
+			ctx.lineTo(450, 350);
+			ctx.lineTo(450, 50);
+			ctx.lineTo(300, 50);
+			ctx.stroke();
 
-	var x = 800 - 25 - loc[1] * 30;
-	var y = 400 - 25  - loc[0] * 70;
+			ctx.beginPath()
+			ctx.moveTo(500,50);
+			ctx.lineTo(750, 50);
+			ctx.lineTo(750, 350);
+			ctx.lineTo(500, 350);
+			ctx.lineTo(500, 250);
+			ctx.lineTo(580, 250);
+			ctx.lineTo(580, 150);
+			ctx.lineTo(500, 150);
+			ctx.lineTo(500, 50);
+			ctx.stroke();
 
-	//drawCrawler
-	ctx.beginPath();
-	ctx.arc(x, y, 10, 0, Math.PI * 2);
-	ctx.fill();
-}
-drawLoc([3,0])
-setInterval(getLoc, 1000);
-var ab = setInterval(getError, 1000);
-</script>
-  </body>
+			var x = 800 - 25 - loc[1] * 30;
+			var y = 400 - 25  - loc[0] * 70;
+
+			//drawCrawler
+			ctx.beginPath();
+			ctx.arc(x, y, 10, 0, Math.PI * 2);
+			ctx.fill();
+		}
+		drawLoc([3,0])
+		setInterval(getLoc, 1000);
+		var ab = setInterval(getError, 1000);
+	</script>
+</body>
 </html>
