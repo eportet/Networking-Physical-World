@@ -66,6 +66,21 @@ from flask import Flask, jsonify, request, current_app, send_from_directory
 
 app = Flask(__name__, static_url_path="")
 
+@app.route("/command")
+def upload():
+	ser = serial.Serial("COM8",9600)
+	ser.write(request.form.get("op"))
+	ser.close()
+	# s = [0]
+	# while True:
+	# 	read_serial=ser.readline()
+	# 	s[0] = str(int (ser.readline(),16))
+	# 	print s[0]
+
+@app.route('/index.html')
+def send_assets():
+	return send_from_directory("", "index.html")
+
 @app.route("/data")
 def uploadLocation():
 	#try:
@@ -79,5 +94,5 @@ def uploadLocation():
 	return str(nn.predict([kk])[0])
 	# except:
 	# 	return "Badddd"
-app.run(host='0.0.0.0', use_reloader=False, threaded=True, port=5001)
+app.run(host='0.0.0.0', use_reloader=False, threaded=True, port=5002)
 
