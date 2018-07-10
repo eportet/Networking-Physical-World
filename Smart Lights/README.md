@@ -1,7 +1,8 @@
-# Challenge 3
+# Smart Lights
+Nodes of LED lights connected to arduinos take HTTP requests from a server hosted at a Raspberry Pi. You can toggle specific lights using a website or the Alexa Skill.
 
 ## Video Overview
-[![Challenge 3](http://img.youtube.com/vi/u1Jl-YBPr2g/0.jpg)](https://youtu.be/u1Jl-YBPr2g "Challenge 3")
+[![Smart Lights](http://img.youtube.com/vi/u1Jl-YBPr2g/0.jpg)](https://youtu.be/u1Jl-YBPr2g "Smart Lights")
 
 ## Setup
 Start by SSH'ing into the Raspberry Pi  
