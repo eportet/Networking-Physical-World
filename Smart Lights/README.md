@@ -1,7 +1,7 @@
 # Challenge 3
 
 ## Video Overview
-[![Challenge 3](http://img.youtube.com/vi/u1Jl-YBPr2g/0.jpg)](https://youtu.be/u1Jl-YBPr2g "Challenge 3")
+[![Smart Lights](http://img.youtube.com/vi/u1Jl-YBPr2g/0.jpg)](https://youtu.be/u1Jl-YBPr2g "Smart Lights")
 
 ## Setup
 Start by SSH'ing into the Raspberry Pi  
